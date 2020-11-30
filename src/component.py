@@ -23,7 +23,7 @@ KEY_SHOP = 'shop'
 KEY_DEBUG = 'debug'
 
 # list of mandatory parameters => if some is missing, component will fail with readable message on initialization.
-MANDATORY_PARS = [KEY_DEBUG]
+MANDATORY_PARS = [KEY_API_TOKEN, KEY_SINCE_DATE, KEY_TO_DATE]
 MANDATORY_IMAGE_PARS = []
 
 
