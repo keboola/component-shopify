@@ -109,8 +109,8 @@ class ShopifyClient:
                                           **additional_params)
 
     def get_products(self, updated_at_min: datetime.datetime = None,
-                   updated_at_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
-                   status='active', fields=None, results_per_page=RESULTS_PER_PAGE):
+                     updated_at_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
+                     status='active', fields=None, results_per_page=RESULTS_PER_PAGE):
 
         additional_params = {}
         if fields:
