@@ -6,6 +6,9 @@ Download all objects under [Orders](https://shopify.dev/docs/admin-api/rest/refe
 [Customer](https://shopify.dev/docs/admin-api/rest/reference/customers) hierarchies.
 
 
+**Credits:** Client part of this application is partially inspired by 
+[Singer.IO shopify TAP project](https://github.com/singer-io/tap-shopify)
+
 **Table of contents:**  
   
 [TOC]
