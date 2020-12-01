@@ -20,13 +20,13 @@ class LineItemWriter(ResultWriter):
 
         # discount_allocations writer
         self.discount_allocations_writer = ResultWriter(result_dir_path,
-                                                        KBCTableDef(name='line_item_discount_allocations',
+                                                        KBCTableDef(name=f'{prefix}line_item_discount_allocations',
                                                                     pk=[KEY_ROW_NR, 'line_item_id'],
                                                                     columns=[],
                                                                     destination=''), flatten_objects=True,
                                                         child_separator='__')
         # tax_lines writer
-        self.tax_lines_writer = ResultWriter(result_dir_path, KBCTableDef(name='line_item_tax_lines',
+        self.tax_lines_writer = ResultWriter(result_dir_path, KBCTableDef(name=f'{prefix}line_item_tax_lines',
                                                                           pk=[KEY_ROW_NR, 'line_item_id'],
                                                                           columns=[],
                                                                           destination=''), flatten_objects=True,
@@ -79,13 +79,13 @@ class FulfillmentsWriter(ResultWriter):
 
         # discount_allocations writer
         self.discount_allocations_writer = ResultWriter(result_dir_path,
-                                                        KBCTableDef(name='line_item_discount_allocations',
+                                                        KBCTableDef(name='fulfillment_discount_allocations',
                                                                     pk=[KEY_ROW_NR, 'fulfillment_id'],
                                                                     columns=[],
                                                                     destination=''), flatten_objects=True,
                                                         child_separator='__')
         # tax_lines writer
-        self.tax_lines_writer = ResultWriter(result_dir_path, KBCTableDef(name='line_item_tax_lines',
+        self.tax_lines_writer = ResultWriter(result_dir_path, KBCTableDef(name='fulfillment_tax_lines',
                                                                           pk=[KEY_ROW_NR, 'fulfillment_id'],
                                                                           columns=[],
                                                                           destination=''), flatten_objects=True,
@@ -138,22 +138,27 @@ class OrderWriter(ResultWriter):
         # lineitems writer
         self.line_item_writer = LineItemWriter(result_dir_path, extraction_time, additional_pk=['order_id'])
 
+        # fulfillments writer
+        self.fulfillments_writer = FulfillmentsWriter(result_dir_path, extraction_time, additional_pk=['order_id'],
+                                                      prefix='order_')
+
         # discount_applications writer
-        self.discount_applications_writer = ResultWriter(result_dir_path, KBCTableDef(name='discount_applications',
-                                                                                      pk=['order_id', KEY_ROW_NR],
-                                                                                      columns=[],
-                                                                                      destination=''),
+        self.discount_applications_writer = ResultWriter(result_dir_path,
+                                                         KBCTableDef(name='order_discount_applications',
+                                                                     pk=['order_id', KEY_ROW_NR],
+                                                                     columns=[],
+                                                                     destination=''),
                                                          flatten_objects=True)
 
         # discount_codes writer
-        self.discount_codes_writer = ResultWriter(result_dir_path, KBCTableDef(name='discount_codes',
+        self.discount_codes_writer = ResultWriter(result_dir_path, KBCTableDef(name='order_discount_codes',
                                                                                pk=['order_id', KEY_ROW_NR],
                                                                                columns=[],
                                                                                destination=''), flatten_objects=True,
                                                   child_separator='__')
 
         # tax_lines writer
-        self.tax_lines_writer = ResultWriter(result_dir_path, KBCTableDef(name='tax_lines',
+        self.tax_lines_writer = ResultWriter(result_dir_path, KBCTableDef(name='order_tax_lines',
                                                                           pk=['order_id', KEY_ROW_NR],
                                                                           columns=[],
                                                                           destination=''), flatten_objects=True,
@@ -165,6 +170,10 @@ class OrderWriter(ResultWriter):
         line_items = data.pop('line_items')
         self.line_item_writer.write_all(line_items, user_values={"order_id": order_id,
                                                                  EXTRACTION_TIME: self.extraction_time})
+
+        self.fulfillments_writer.write_all(data.pop('fulfillments', []), user_values={"order_id": order_id,
+                                                                                      EXTRACTION_TIME:
+                                                                                          self.extraction_time})
 
         for idx, el in enumerate(data.pop('discount_applications')):
             el[KEY_ROW_NR] = idx
@@ -186,6 +195,7 @@ class OrderWriter(ResultWriter):
     def collect_results(self):
         results = []
         results.extend(self.line_item_writer.collect_results())
+        results.extend(self.fulfillments_writer.collect_results())
         results.extend(self.discount_applications_writer.collect_results())
         results.extend(self.tax_lines_writer.collect_results())
         results.extend(self.discount_codes_writer.collect_results())
@@ -194,6 +204,7 @@ class OrderWriter(ResultWriter):
 
     def close(self):
         self.line_item_writer.close()
+        self.fulfillments_writer.close()
         self.discount_applications_writer.close()
         self.discount_codes_writer.close()
         self.tax_lines_writer.close()
