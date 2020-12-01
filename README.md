@@ -1,20 +1,45 @@
 # KBC Component
 
-Description
+Shopify extractor for Keboola Connection. 
+Download all objects under [Orders](https://shopify.dev/docs/admin-api/rest/reference/orders/order#index-2020-10), 
+[Products](https://shopify.dev/docs/admin-api/rest/reference/products/product) and 
+[Customer](https://shopify.dev/docs/admin-api/rest/reference/customers) hierarchies.
+
 
 **Table of contents:**  
   
 [TOC]
 
 
-# Functionality notes
+# Shopify setup - Prerequisites
+
+To enable this application you need to:
+ 
+- [enable private app development](https://help.shopify.com/en/manual/apps/private-apps#enable-private-app-development-from-the-shopify-admin) for your store. 
+- Create a private app
+- Enable `Read access` ADMIN API PERMISSIONS for following following objects:
+    - `Orders`
+    - `Products`
+    - `Customers`
+    
+ 
 
 
 # Configuration
 
-## Param 1
+## Admin password
 
-## Param 2
+Admin password of your private app.
+
+## Shop name
+
+Your shop id found in url, e.g. `[shop_id]`.myshopify.com
+
+## Period from and to dates
+
+Marks the last_updated date of requested objects. 
+Accepts date in `YYYY-MM-DD` format or dateparser string i.e. `5 days ago`, `1 month ago`, `yesterday`, etc.
+
 
 
 ## Development
