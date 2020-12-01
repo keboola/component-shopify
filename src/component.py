@@ -63,37 +63,55 @@ class Component(KBCEnvHandler):
         '''
         params = self.cfg_params  # noqa
 
+        last_state = self.get_state_file()
+
         start_date, end_date = self.get_date_period_converted(params[KEY_SINCE_DATE], params[KEY_TO_DATE])
         results = []
+        sliced_results = []
         logging.info(f'Getting orders since {start_date}')
-        results.extend(self.download_orders(start_date, end_date))
+        results.extend(self.download_orders(start_date, end_date, last_state))
 
         logging.info(f'Getting products since {start_date}')
-        results.extend(self.download_products(start_date, end_date))
+        results.extend(self.download_products(start_date, end_date, last_state))
 
         logging.info(f'Getting customers since {start_date}')
-        results.extend(self.download_customers(start_date, end_date))
 
-        self.create_manifests(results)
+        results.extend(self.download_customers(start_date, end_date, last_state))
 
-    def download_orders(self, start_date, end_date):
-        with OrderWriter(self.tables_out_path, 'order', extraction_time=self.extraction_time) as writer:
+        # get current columns and store in state
+        headers = {}
+        for r in results:
+            file_name = os.path.basename(r.full_path)
+            headers[file_name] = r.table_def.columns
+        self.write_state_file(headers)
+
+        # separate sliced results
+        sliced_results.extend([results.pop(idx) for idx, r in enumerate(results) if os.path.isdir(r.full_path)])
+
+        self.create_manifests(results, incremental=True)
+        self.create_manifests(sliced_results, headless=True, incremental=True)
+
+    def download_orders(self, start_date, end_date, file_headers):
+        with OrderWriter(self.tables_out_path, 'order', extraction_time=self.extraction_time,
+                         file_headers=file_headers) as writer:
             for o in self.client.get_orders(start_date, end_date):
                 writer.write(o)
 
         results = writer.collect_results()
         return results
 
-    def download_products(self, start_date, end_date):
-        with ProductsWriter(self.tables_out_path, 'product', extraction_time=self.extraction_time) as writer:
+    def download_products(self, start_date, end_date, file_headers):
+        with ProductsWriter(self.tables_out_path, 'product', extraction_time=self.extraction_time,
+                            file_headers=file_headers) as writer:
             for o in self.client.get_products(start_date, end_date):
                 writer.write(o)
 
         results = writer.collect_results()
         return results
 
-    def download_customers(self, start_date, end_date):
-        with CustomersWriter(self.tables_out_path, 'customer', extraction_time=self.extraction_time) as writer:
+    def download_customers(self, start_date, end_date, file_headers):
+        with CustomersWriter(self.tables_out_path, 'customer', extraction_time=self.extraction_time,
+                             file_headers=file_headers) as writer:
             for o in self.client.get_customers(start_date, end_date):
                 writer.write(o)
 

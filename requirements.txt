@@ -1,4 +1,4 @@
-https://bitbucket.org/kds_consulting_team/keboola-python-util-lib/get/0.4.8.zip#egg=kbc
+https://bitbucket.org/kds_consulting_team/keboola-python-util-lib/get/0.5.0.zip#egg=kbc
 mock
 freezegun
 ShopifyAPI
