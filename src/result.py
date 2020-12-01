@@ -13,7 +13,7 @@ class LineItemWriter(ResultWriter):
 
         ResultWriter.__init__(self, result_dir_path,
                               KBCTableDef(name=f'{prefix}line_item', pk=pk, columns=[], destination=''),
-                              fix_headers=False, flatten_objects=True)
+                              fix_headers=False, flatten_objects=True, child_separator='__')
         self.extraction_time = extraction_time
 
         self.result_dir_path = result_dir_path
@@ -23,12 +23,14 @@ class LineItemWriter(ResultWriter):
                                                         KBCTableDef(name='line_item_discount_allocations',
                                                                     pk=[KEY_ROW_NR, 'line_item_id'],
                                                                     columns=[],
-                                                                    destination=''), flatten_objects=True)
+                                                                    destination=''), flatten_objects=True,
+                                                        child_separator='__')
         # tax_lines writer
         self.tax_lines_writer = ResultWriter(result_dir_path, KBCTableDef(name='line_item_tax_lines',
                                                                           pk=[KEY_ROW_NR, 'line_item_id'],
                                                                           columns=[],
-                                                                          destination=''), flatten_objects=True)
+                                                                          destination=''), flatten_objects=True,
+                                             child_separator='__')
 
     def write(self, data, file_name=None, user_values=None, object_from_arrays=False, write_header=True):
         # flatten obj
@@ -36,11 +38,13 @@ class LineItemWriter(ResultWriter):
 
         for idx, el in enumerate(data.pop('discount_allocations', [])):
             el[KEY_ROW_NR] = idx
-            self.discount_allocations_writer.write(el, user_values={"line_item_id": line_item_id})
+            self.discount_allocations_writer.write(el, user_values={"line_item_id": line_item_id,
+                                                                    EXTRACTION_TIME: self.extraction_time})
 
         for idx, el in enumerate(data.pop('tax_lines', [])):
             el[KEY_ROW_NR] = idx
-            self.tax_lines_writer.write(el, user_values={"line_item_id": line_item_id})
+            self.tax_lines_writer.write(el, user_values={"line_item_id": line_item_id,
+                                                         EXTRACTION_TIME: self.extraction_time})
 
         super().write(data, file_name, user_values, object_from_arrays, write_header)
 
@@ -65,7 +69,7 @@ class FulfillmentsWriter(ResultWriter):
 
         ResultWriter.__init__(self, result_dir_path,
                               KBCTableDef(name=f'{prefix}fulfillments', pk=pk, columns=[], destination=''),
-                              fix_headers=False, flatten_objects=True)
+                              fix_headers=False, flatten_objects=True, child_separator='__')
         self.extraction_time = extraction_time
 
         self.result_dir_path = result_dir_path
@@ -78,12 +82,14 @@ class FulfillmentsWriter(ResultWriter):
                                                         KBCTableDef(name='line_item_discount_allocations',
                                                                     pk=[KEY_ROW_NR, 'fulfillment_id'],
                                                                     columns=[],
-                                                                    destination=''), flatten_objects=True)
+                                                                    destination=''), flatten_objects=True,
+                                                        child_separator='__')
         # tax_lines writer
         self.tax_lines_writer = ResultWriter(result_dir_path, KBCTableDef(name='line_item_tax_lines',
                                                                           pk=[KEY_ROW_NR, 'fulfillment_id'],
                                                                           columns=[],
-                                                                          destination=''), flatten_objects=True)
+                                                                          destination=''), flatten_objects=True,
+                                             child_separator='__')
 
     def write(self, data, file_name=None, user_values=None, object_from_arrays=False, write_header=True):
         # flatten obj
@@ -123,7 +129,7 @@ class OrderWriter(ResultWriter):
     def __init__(self, result_dir_path, result_name, extraction_time):
         ResultWriter.__init__(self, result_dir_path,
                               KBCTableDef(name=result_name, pk=['id'], columns=[], destination=''),
-                              fix_headers=False, flatten_objects=True)
+                              fix_headers=False, flatten_objects=True, child_separator='__')
         self.extraction_time = extraction_time
         # custom user added col
         self.user_value_cols = ['extraction_time']
@@ -143,19 +149,22 @@ class OrderWriter(ResultWriter):
         self.discount_codes_writer = ResultWriter(result_dir_path, KBCTableDef(name='discount_codes',
                                                                                pk=['order_id', KEY_ROW_NR],
                                                                                columns=[],
-                                                                               destination=''), flatten_objects=True)
+                                                                               destination=''), flatten_objects=True,
+                                                  child_separator='__')
 
         # tax_lines writer
         self.tax_lines_writer = ResultWriter(result_dir_path, KBCTableDef(name='tax_lines',
                                                                           pk=['order_id', KEY_ROW_NR],
                                                                           columns=[],
-                                                                          destination=''), flatten_objects=True)
+                                                                          destination=''), flatten_objects=True,
+                                             child_separator='__')
 
     def write(self, data, file_name=None, user_values=None, object_from_arrays=False, write_header=True):
         # flatten obj
         order_id = data['id']
         line_items = data.pop('line_items')
-        self.line_item_writer.write_all(line_items, user_values={"order_id": order_id})
+        self.line_item_writer.write_all(line_items, user_values={"order_id": order_id,
+                                                                 EXTRACTION_TIME: self.extraction_time})
 
         for idx, el in enumerate(data.pop('discount_applications')):
             el[KEY_ROW_NR] = idx
@@ -201,7 +210,7 @@ class ProductVariantWriter(ResultWriter):
 
         ResultWriter.__init__(self, result_dir_path,
                               KBCTableDef(name='product_variant', pk=pk, columns=[], destination=''),
-                              fix_headers=False, flatten_objects=True)
+                              fix_headers=False, flatten_objects=True, child_separator='__')
         self.extraction_time = extraction_time
 
         self.result_dir_path = result_dir_path
@@ -211,7 +220,8 @@ class ProductVariantWriter(ResultWriter):
                                                       KBCTableDef(name='product_variant_presentment_prices',
                                                                   pk=[KEY_ROW_NR, 'product_variant_id'],
                                                                   columns=[],
-                                                                  destination=''), flatten_objects=True)
+                                                                  destination=''), flatten_objects=True,
+                                                      child_separator='__')
 
     def write(self, data, file_name=None, user_values=None, object_from_arrays=False, write_header=True):
         # flatten obj
@@ -219,7 +229,8 @@ class ProductVariantWriter(ResultWriter):
 
         for idx, el in enumerate(data.pop('presentment_prices', [])):
             el[KEY_ROW_NR] = idx
-            self.presentment_prices_writer.write(el, user_values={"product_variant_id": product_variant_id})
+            self.presentment_prices_writer.write(el, user_values={"product_variant_id": product_variant_id,
+                                                                  EXTRACTION_TIME: self.extraction_time})
 
         super().write(data, file_name, user_values, object_from_arrays, write_header)
 
@@ -239,7 +250,7 @@ class ProductsWriter(ResultWriter):
     def __init__(self, result_dir_path, result_name, extraction_time):
         ResultWriter.__init__(self, result_dir_path,
                               KBCTableDef(name=result_name, pk=['id'], columns=[], destination=''),
-                              fix_headers=False, flatten_objects=True)
+                              fix_headers=False, flatten_objects=True, child_separator='__')
         self.extraction_time = extraction_time
         # custom user added col
         self.user_value_cols = ['extraction_time']
@@ -252,19 +263,25 @@ class ProductsWriter(ResultWriter):
         self.product_options_writer = ResultWriter(result_dir_path, KBCTableDef(name='product_options',
                                                                                 pk=['id', 'product_id'],
                                                                                 columns=[],
-                                                                                destination=''), flatten_objects=True)
+                                                                                destination=''), flatten_objects=True,
+                                                   child_separator='__')
         # images writer
         self.product_images_writer = ResultWriter(result_dir_path, KBCTableDef(name='product_images',
                                                                                pk=['id', 'product_id'],
                                                                                columns=[],
-                                                                               destination=''), flatten_objects=True)
+                                                                               destination=''), flatten_objects=True,
+                                                  child_separator='__')
 
     def write(self, data, file_name=None, user_values=None, object_from_arrays=False, write_header=True):
-        self.product_images_writer.write_all(data.pop('images'))
+        product_id = data['id']
+        self.product_images_writer.write_all(data.pop('images', []), user_values={
+            EXTRACTION_TIME: self.extraction_time})
 
-        self.product_options_writer.write_all(data.pop('options'))
+        self.product_options_writer.write_all(data.pop('options', []), user_values={
+            EXTRACTION_TIME: self.extraction_time})
 
-        self.variants_writer.write_all(data.pop('variants'))
+        self.variants_writer.write_all(data.pop('variants', []), user_values={'product_id': product_id,
+                                                                              EXTRACTION_TIME: self.extraction_time})
 
         super().write(data, user_values=user_values)
 
@@ -280,4 +297,42 @@ class ProductsWriter(ResultWriter):
         self.product_options_writer.close()
         self.product_images_writer.close()
         self.variants_writer.close()
+        super().close()
+
+
+# ############ CUSTOMERS
+
+
+class CustomersWriter(ResultWriter):
+
+    def __init__(self, result_dir_path, result_name, extraction_time):
+        ResultWriter.__init__(self, result_dir_path,
+                              KBCTableDef(name=result_name, pk=['id'], columns=[], destination=''),
+                              fix_headers=False, flatten_objects=True, child_separator='__')
+        self.extraction_time = extraction_time
+        # custom user added col
+        self.user_value_cols = ['extraction_time']
+        self.result_dir_path = result_dir_path
+
+        # addresses writer
+        self.address_writer = ResultWriter(result_dir_path, KBCTableDef(name='customer_addresses',
+                                                                        pk=['id', 'customer_id'],
+                                                                        columns=[],
+                                                                        destination=''), flatten_objects=True,
+                                           child_separator='__')
+
+    def write(self, data, file_name=None, user_values=None, object_from_arrays=False, write_header=True):
+        self.address_writer.write_all(data.pop('addresses'), user_values={
+            EXTRACTION_TIME: self.extraction_time})
+
+        super().write(data, user_values=user_values)
+
+    def collect_results(self):
+        results = []
+        results.extend(self.address_writer.collect_results())
+        results.extend(super().collect_results())
+        return results
+
+    def close(self):
+        self.address_writer.close()
         super().close()

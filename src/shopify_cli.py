@@ -123,6 +123,23 @@ class ShopifyClient:
                                           status=status,
                                           **additional_params)
 
+    def get_customers(self, updated_at_min: datetime.datetime = None,
+                      updated_at_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
+                      state=None, fields=None, results_per_page=RESULTS_PER_PAGE):
+
+        additional_params = {}
+        if fields:
+            additional_params['fields'] = fields
+
+        if state:
+            additional_params['state'] = state
+
+        return self.get_objects_paginated(shopify.Customer,
+                                          updated_at_min=updated_at_min,
+                                          updated_at_max=updated_at_max,
+                                          results_per_page=results_per_page,
+                                          **additional_params)
+
     @error_handling
     def call_api_all_pages(self, shopify_object, query_params):
         # this makes the PaginatedCollection iterator actually fetch all pages automatically

@@ -9,7 +9,7 @@ import sys
 from kbc.env_handler import KBCEnvHandler
 from pathlib import Path
 
-from result import OrderWriter, ProductsWriter
+from result import OrderWriter, ProductsWriter, CustomersWriter
 from shopify_cli import ShopifyClient
 
 # configuration variables
@@ -41,6 +41,9 @@ class Component(KBCEnvHandler):
             debug = True
         if debug:
             logging.getLogger().setLevel(logging.DEBUG)
+        else:
+            logging.getLogger('pyactiveresource.connection').setLevel(
+                logging.WARNING)  # avoid detail logs from the library
         logging.info('Loading configuration...')
 
         try:
@@ -62,8 +65,14 @@ class Component(KBCEnvHandler):
 
         start_date, end_date = self.get_date_period_converted(params[KEY_SINCE_DATE], params[KEY_TO_DATE])
         results = []
+        logging.info(f'Getting orders since {start_date}')
         results.extend(self.download_orders(start_date, end_date))
+
+        logging.info(f'Getting products since {start_date}')
         results.extend(self.download_products(start_date, end_date))
+
+        logging.info(f'Getting customers since {start_date}')
+        results.extend(self.download_customers(start_date, end_date))
 
         self.create_manifests(results)
 
@@ -78,6 +87,14 @@ class Component(KBCEnvHandler):
     def download_products(self, start_date, end_date):
         with ProductsWriter(self.tables_out_path, 'product', extraction_time=self.extraction_time) as writer:
             for o in self.client.get_products(start_date, end_date):
+                writer.write(o)
+
+        results = writer.collect_results()
+        return results
+
+    def download_customers(self, start_date, end_date):
+        with CustomersWriter(self.tables_out_path, 'customer', extraction_time=self.extraction_time) as writer:
+            for o in self.client.get_customers(start_date, end_date):
                 writer.write(o)
 
         results = writer.collect_results()
