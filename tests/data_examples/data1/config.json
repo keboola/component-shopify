@@ -73,6 +73,7 @@
         "baz": "bazBar"
     },
     "action": "test",
+    "image_parameters": {},
     "authorization": {
         "oauth_api": {
             "id": "123456",
@@ -90,5 +91,5 @@
                 "#appSecret": "myappsecret"
             }
         }
-    }    
+    }
 }
