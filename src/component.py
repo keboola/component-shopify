@@ -16,6 +16,7 @@ from shopify_cli import ShopifyClient
 KEY_API_TOKEN = '#api_token'
 KEY_SINCE_DATE = 'date_since'
 KEY_TO_DATE = 'date_to'
+KEY_INCREMENTAL_OUTPUT = 'incremental_output'
 
 KEY_SHOP = 'shop'
 
@@ -87,9 +88,9 @@ class Component(KBCEnvHandler):
 
         # separate sliced results
         sliced_results.extend([results.pop(idx) for idx, r in enumerate(results) if os.path.isdir(r.full_path)])
-
-        self.create_manifests(results, incremental=True)
-        self.create_manifests(sliced_results, headless=True, incremental=True)
+        incremental = params.get(KEY_INCREMENTAL_OUTPUT, False)
+        self.create_manifests(results, incremental=incremental)
+        self.create_manifests(sliced_results, headless=True, incremental=incremental)
 
     def download_orders(self, start_date, end_date, file_headers):
         with OrderWriter(self.tables_out_path, 'order', extraction_time=self.extraction_time,
