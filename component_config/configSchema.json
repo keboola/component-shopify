@@ -5,7 +5,8 @@
     "shop",
     "#api_token",
     "date_since",
-    "date_to"
+    "date_to",
+    "incremental_output"
   ],
   "properties": {
     "#api_token": {
@@ -34,6 +35,23 @@
       "default": "now",
       "description": " Date in YYYY-MM-DD format or dateparser string i.e. 5 days ago, 1 month ago, yesterday, etc. If left empty, all records are downloaded.",
       "propertyOrder": 400
+    },
+      "incremental_output": {
+      "type": "number",
+      "enum": [
+        0,
+        1
+      ],
+      "options": {
+        "enum_titles": [
+          "Full Load",
+          "Incremental Update"
+        ]
+      },
+      "default": 1,
+      "title": "Load type",
+      "description": "If set to Incremental update, the result tables will be updated based on primary key. Full load overwrites the destination table each time. NOTE: If you wish to remove deleted records, this needs to be set to Full load and the Period from attribute empty.",
+      "propertyOrder": 450
     }
   }
 }

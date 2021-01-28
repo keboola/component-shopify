@@ -3,7 +3,9 @@
 Shopify extractor for Keboola Connection. 
 Download all objects under [Orders](https://shopify.dev/docs/admin-api/rest/reference/orders/order#index-2020-10), 
 [Products](https://shopify.dev/docs/admin-api/rest/reference/products/product) and 
-[Customer](https://shopify.dev/docs/admin-api/rest/reference/customers) hierarchies.
+[Customer](https://shopify.dev/docs/admin-api/rest/reference/customers) hierarchies. 
+
+Data is always loaded incrementally.
 
 
 **Credits:** Client part of this application is partially inspired by 
@@ -57,9 +59,9 @@ If required, change local data folder (the `CUSTOM_FOLDER` placeholder) path to 
 
 Clone this repository, init the workspace and run the component with following command:
 
-```
-git clone repo_path my-new-component
-cd my-new-component
+```shell script
+git clone git@bitbucket.org:kds_consulting_team/kds-team.ex-shopify.git
+cd kds-team.ex-shopify
 docker-compose build
 docker-compose run --rm dev
 ```

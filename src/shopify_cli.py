@@ -1,12 +1,14 @@
 import backoff
 import datetime
 import functools
+import json
 import logging
 import math
 import pyactiveresource
 import pyactiveresource.formats
 import shopify
 import sys
+from pyactiveresource.connection import ResourceNotFound, UnauthorizedAccess
 from typing import Type
 
 # ##################  Taken from Sopify Singer-Tap
@@ -19,6 +21,10 @@ DATE_WINDOW_SIZE = 1
 
 # We will retry a 500 error a maximum of 5 times before giving up
 MAX_RETRIES = 5
+
+
+class ShopifyClientError(Exception):
+    pass
 
 
 def is_not_status_code_fn(status_code):
@@ -74,6 +80,25 @@ def error_handling(fnc):
     @functools.wraps(fnc)
     def wrapper(*args, **kwargs):
         return fnc(*args, **kwargs)
+
+    return wrapper
+
+
+def response_error_handling(func):
+    """Function, that handles response handling of HTTP requests.
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except ResourceNotFound as e:
+            logging.error(e, exc_info=True)
+            # Handle different error codes
+            raise ShopifyClientError('The resource was not found. Please check your Shop ID!') from e
+        except UnauthorizedAccess as e:
+            error_msg = json.loads(e.response.body.decode('utf-8'))["errors"]
+            raise ShopifyClientError(f'{error_msg}; Please check your credentials and app permissions!') from e
 
     return wrapper
 
@@ -140,6 +165,7 @@ class ShopifyClient:
                                           results_per_page=results_per_page,
                                           **additional_params)
 
+    @response_error_handling
     @error_handling
     def call_api_all_pages(self, shopify_object, query_params):
         # this makes the PaginatedCollection iterator actually fetch all pages automatically
