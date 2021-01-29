@@ -94,7 +94,7 @@ class Component(KBCEnvHandler):
             logging.info(f'Getting customers since {start_date}')
             results.extend(self.download_customers(start_date, end_date, last_state))
 
-        if KEY_EVENTS in endpoints and len(endpoints[KEY_EVENTS]) > 1:
+        if KEY_EVENTS in endpoints and len(endpoints[KEY_EVENTS]) > 0:
             logging.info(f'Getting events since {start_date}')
             results.extend(self.download_events(endpoints[KEY_EVENTS][0], start_date, end_date, last_state))
 

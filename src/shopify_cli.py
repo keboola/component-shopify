@@ -62,7 +62,7 @@ def retry_after_wait_gen(**kwargs):
     # it was proven to work in our spikes.
     # It's been observed to come through as lowercase, so fallback if not present
     sleep_time_str = resp.headers.get('Retry-After', resp.headers.get('retry-after'))
-    yield math.floor(float(sleep_time_str)*2)
+    yield math.floor(float(sleep_time_str) * 2)
 
 
 def error_handling(fnc):
@@ -222,6 +222,8 @@ class ShopifyClient:
         return self.get_objects_paginated(shopify.Event,
                                           updated_at_min=updated_at_min,
                                           updated_at_max=updated_at_max,
+                                          date_start_par='created_at_min',
+                                          date_end_par='created_at_max',
                                           results_per_page=results_per_page,
                                           **additional_params)
 
@@ -252,7 +254,10 @@ class ShopifyClient:
                               updated_at_min: datetime.datetime = None,
                               updated_at_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
                               date_window_size: int = DATE_WINDOW_SIZE,
-                              results_per_page=RESULTS_PER_PAGE, **kwargs):
+                              results_per_page=RESULTS_PER_PAGE,
+                              date_start_par='updated_at_min',
+                              date_end_par='updated_at_max',
+                              **kwargs):
         """
         Get all objects and paginate per date. The pagination is also limited by the ``date_window_size`` parameter,
         that prevents overloading the API and getting too many 500s.
@@ -289,8 +294,8 @@ class ShopifyClient:
                 updated_at_max = stop_time
 
             query_params = {**{
-                "updated_at_min": updated_at_min.isoformat(),
-                "updated_at_max": updated_at_max.isoformat(),
+                date_start_par: updated_at_min.isoformat(),
+                date_end_par: updated_at_max.isoformat(),
                 "limit": results_per_page
             }, **kwargs}
 
