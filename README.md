@@ -2,7 +2,7 @@
 
 Shopify extractor for Keboola Connection. 
 Download all objects under [Orders](https://shopify.dev/docs/admin-api/rest/reference/orders/order#index-2020-10), 
-[Products](https://shopify.dev/docs/admin-api/rest/reference/products/product) and 
+[Products](https://shopify.dev/docs/admin-api/rest/reference/products/product), [Event](https://shopify.dev/docs/admin-api/rest/reference/events/event) and 
 [Customer](https://shopify.dev/docs/admin-api/rest/reference/customers) hierarchies. 
 
 Data is always loaded incrementally.
@@ -27,6 +27,7 @@ To enable this application you need to:
     - `Products`
     - `Customers`
     
+    
  
 
 
@@ -40,12 +41,38 @@ Admin password of your private app.
 
 Your shop id found in url, e.g. `[shop_id]`.myshopify.com
 
-## Period from and to dates
+
+## Loading Options
+
+### Period from and to dates
 
 Marks the last_updated date of requested objects. 
 Accepts date in `YYYY-MM-DD` format or dateparser string i.e. `5 days ago`, `1 month ago`, `yesterday`, etc.
 
+## Load type
 
+If set to Incremental update, the result tables will be updated based on primary key.
+ Full load overwrites the destination table each time.
+
+## Endpoints
+
+Following endpoints are supported
+
+### Products
+### Orders
+### Customers
+
+### Events
+
+Downloads events related to selected Resources. These need to be selected in the `resources` fields
+
+#### Event Types
+
+You may download specific event types to limit the result size. Specify the event names separated with comma 
+e.g. `confirmed, create, destroy`. If omitted all possible types are downloaded
+
+Note that different resources generate different types of event. 
+See the [docs](https://shopify.dev/docs/admin-api/rest/reference/events/event#resources-that-can-create-events) for a list of possible verbs.
 
 ## Development
 

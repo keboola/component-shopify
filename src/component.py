@@ -7,16 +7,26 @@ import logging
 import os
 import sys
 from kbc.env_handler import KBCEnvHandler
+from kbc.result import ResultWriter, KBCTableDef
 from pathlib import Path
+from typing import List
 
 from result import OrderWriter, ProductsWriter, CustomersWriter
 from shopify_cli import ShopifyClient
 
 # configuration variables
 KEY_API_TOKEN = '#api_token'
+
 KEY_SINCE_DATE = 'date_since'
 KEY_TO_DATE = 'date_to'
 KEY_INCREMENTAL_OUTPUT = 'incremental_output'
+KEY_LOADING_OPTIONS = 'loading_options'
+
+KEY_ENDPOINTS = 'endpoints'
+KEY_ORDERS = 'orders'
+KEY_PRODUCTS = 'products'
+KEY_CUSTOMERS = 'customers'
+KEY_EVENTS = 'events'
 
 KEY_SHOP = 'shop'
 
@@ -24,7 +34,7 @@ KEY_SHOP = 'shop'
 KEY_DEBUG = 'debug'
 
 # list of mandatory parameters => if some is missing, component will fail with readable message on initialization.
-MANDATORY_PARS = [KEY_API_TOKEN, KEY_SINCE_DATE, KEY_TO_DATE]
+MANDATORY_PARS = [KEY_API_TOKEN, KEY_SHOP, KEY_LOADING_OPTIONS, KEY_ENDPOINTS]
 MANDATORY_IMAGE_PARS = []
 
 
@@ -66,18 +76,27 @@ class Component(KBCEnvHandler):
 
         last_state = self.get_state_file()
 
-        start_date, end_date = self.get_date_period_converted(params[KEY_SINCE_DATE], params[KEY_TO_DATE])
+        start_date, end_date = self.get_date_period_converted(params[KEY_LOADING_OPTIONS][KEY_SINCE_DATE],
+                                                              params[KEY_LOADING_OPTIONS][KEY_TO_DATE])
         results = []
         sliced_results = []
-        logging.info(f'Getting orders since {start_date}')
-        results.extend(self.download_orders(start_date, end_date, last_state))
+        endpoints = params[KEY_ENDPOINTS]
 
-        logging.info(f'Getting products since {start_date}')
-        results.extend(self.download_products(start_date, end_date, last_state))
+        if KEY_ORDERS in endpoints:
+            logging.info(f'Getting orders since {start_date}')
+            results.extend(self.download_orders(start_date, end_date, last_state))
 
-        logging.info(f'Getting customers since {start_date}')
+        if KEY_PRODUCTS in endpoints:
+            logging.info(f'Getting products since {start_date}')
+            results.extend(self.download_products(start_date, end_date, last_state))
 
-        results.extend(self.download_customers(start_date, end_date, last_state))
+        if KEY_CUSTOMERS in endpoints:
+            logging.info(f'Getting customers since {start_date}')
+            results.extend(self.download_customers(start_date, end_date, last_state))
+
+        if KEY_EVENTS in endpoints:
+            logging.info(f'Getting events since {start_date}')
+            results.extend(self.download_events(endpoints[KEY_EVENTS][0], start_date, end_date, last_state))
 
         # get current columns and store in state
         headers = {}
@@ -85,10 +104,9 @@ class Component(KBCEnvHandler):
             file_name = os.path.basename(r.full_path)
             headers[file_name] = r.table_def.columns
         self.write_state_file(headers)
-
         # separate sliced results
         sliced_results.extend([results.pop(idx) for idx, r in enumerate(results) if os.path.isdir(r.full_path)])
-        incremental = params.get(KEY_INCREMENTAL_OUTPUT, False)
+        incremental = params[KEY_LOADING_OPTIONS].get(KEY_INCREMENTAL_OUTPUT, False)
         self.create_manifests(results, incremental=incremental)
         self.create_manifests(sliced_results, headless=True, incremental=incremental)
 
@@ -115,6 +133,45 @@ class Component(KBCEnvHandler):
                              file_headers=file_headers) as writer:
             for o in self.client.get_customers(start_date, end_date):
                 writer.write(o)
+
+        results = writer.collect_results()
+        return results
+
+    def parse_comma_separated_values(self, param) -> List[str]:
+        cols = []
+        if param:
+            cols = [p.strip() for p in param.split(",")]
+        return cols
+
+    def download_events(self, param, start_date, end_date, last_state):
+        headers = [
+            "id",
+            "subject_id",
+            "created_at",
+            "subject_type",
+            "verb",
+            "arguments",
+            "body",
+            "message",
+            "author",
+            "description",
+            "path"
+        ]
+        with ResultWriter(self.tables_out_path,
+                          KBCTableDef(name='events', pk=['id'],
+                                      columns=headers,
+                                      destination=''),
+                          fix_headers=True, flatten_objects=True, child_separator='__') as writer:
+
+            # iterate over types
+
+            types = self.parse_comma_separated_values(param['types'])
+            filters = param['filters']
+            if not types:
+                types = [None]
+            for t in types:
+                for o in self.client.get_events(start_date, end_date, filter_resource=filters, event_type=t):
+                    writer.write(o)
 
         results = writer.collect_results()
         return results

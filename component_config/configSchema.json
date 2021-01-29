@@ -4,9 +4,8 @@
   "required": [
     "shop",
     "#api_token",
-    "date_since",
-    "date_to",
-    "incremental_output"
+    "loading_options",
+    "endpoints"
   ],
   "properties": {
     "#api_token": {
@@ -22,36 +21,127 @@
       "description": "Your shop id found in url, e.g. [shop_id].myshopify.com",
       "propertyOrder": 250
     },
-    "date_since": {
-      "type": "string",
-      "title": "Period from date [including].",
-      "default": "1 week ago",
-      "description": " Date in YYYY-MM-DD format or dateparser string i.e. 5 days ago, 1 month ago, yesterday, etc. If left empty, all records are downloaded.",
-      "propertyOrder": 300
-    },
-    "date_to": {
-      "type": "string",
-      "title": "Period to date [excluding].",
-      "default": "now",
-      "description": " Date in YYYY-MM-DD format or dateparser string i.e. 5 days ago, 1 month ago, yesterday, etc. If left empty, all records are downloaded.",
-      "propertyOrder": 400
-    },
-      "incremental_output": {
-      "type": "number",
-      "enum": [
-        0,
-        1
+    "loading_options": {
+      "type": "object",
+      "title": "Loading Options",
+      "propertyOrder": 400,
+      "format": "grid",
+      "required": [
+        "incremental_output",
+        "date_since",
+        "date_to"
       ],
-      "options": {
-        "enum_titles": [
-          "Full Load",
-          "Incremental Update"
-        ]
-      },
-      "default": 1,
-      "title": "Load type",
-      "description": "If set to Incremental update, the result tables will be updated based on primary key. Full load overwrites the destination table each time. NOTE: If you wish to remove deleted records, this needs to be set to Full load and the Period from attribute empty.",
-      "propertyOrder": 450
+      "properties": {
+        "date_since": {
+          "type": "string",
+          "title": "Period from date [including].",
+          "default": "1 week ago",
+          "description": " Date in YYYY-MM-DD format or dateparser string i.e. 5 days ago, 1 month ago, yesterday, etc. If left empty, all records are downloaded.",
+          "propertyOrder": 300
+        },
+        "date_to": {
+          "type": "string",
+          "title": "Period to date [excluding].",
+          "default": "now",
+          "description": " Date in YYYY-MM-DD format or dateparser string i.e. 5 days ago, 1 month ago, yesterday, etc. If left empty, all records are downloaded.",
+          "propertyOrder": 400
+        },
+        "incremental_output": {
+          "type": "number",
+          "enum": [
+            0,
+            1
+          ],
+          "options": {
+            "enum_titles": [
+              "Full Load",
+              "Incremental Update"
+            ]
+          },
+          "default": 1,
+          "title": "Load type",
+          "description": "If set to Incremental update, the result tables will be updated based on primary key. Full load overwrites the destination table each time. NOTE: If you wish to remove deleted records, this needs to be set to Full load and the Period from attribute empty.",
+          "propertyOrder": 450
+        }
+      }
+    },
+    "endpoints": {
+      "type": "object",
+      "title": "Endpoints",
+      "propertyOrder": 500,
+      "properties": {
+        "orders": {
+          "type": "boolean",
+          "title": "Orders",
+          "default": true,
+          "format": "checkbox",
+          "propertyOrder": 30
+        },
+        "products": {
+          "type": "boolean",
+          "title": "Products",
+          "default": true,
+          "format": "checkbox",
+          "propertyOrder": 40
+        },
+        "customers": {
+          "type": "boolean",
+          "title": "Customers",
+          "default": true,
+          "format": "checkbox",
+          "propertyOrder": 45
+        },
+        "events": {
+          "type": "array",
+          "title": "Events",
+          "description": "Download Events.",
+          "propertyOrder": 4000,
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "title": "Setup",
+            "required": [
+              "filters",
+              "types"
+            ],
+            "properties": {
+              "filters": {
+                "type": "array",
+                "title": "Types",
+                "description": "Resource Types",
+                "items": {
+                  "enum": [
+                    "Article",
+                    "Blog",
+                    "Collection",
+                    "Comment",
+                    "Order",
+                    "Page",
+                    "PriceRule",
+                    "Product",
+                    "ApiPermission"
+                  ],
+                  "type": "string"
+                },
+                "format": "select",
+                "uniqueItems": true,
+                "propertyOrder": 360
+              },
+              "types": {
+                "type": "string",
+                "title": "Event Types",
+                "format": "textarea",
+                "options": {
+                  "input_height": "100px"
+                },
+                "description": "Comma separated list of required event types. e.g. 'confirmed', 'create', 'destroy'. If omitted all possible types are downloaded.  Different resources generate different types of event. See the docs for a list of possible verbs.",
+                "uniqueItems": true,
+                "propertyOrder": 700
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

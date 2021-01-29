@@ -1,3 +1,5 @@
+from enum import Enum
+
 import backoff
 import datetime
 import functools
@@ -9,7 +11,7 @@ import pyactiveresource.formats
 import shopify
 import sys
 from pyactiveresource.connection import ResourceNotFound, UnauthorizedAccess
-from typing import Type
+from typing import Type, List, Union
 
 # ##################  Taken from Sopify Singer-Tap
 
@@ -17,7 +19,7 @@ RESULTS_PER_PAGE = 175
 
 # We've observed 500 errors returned if this is too large (30 days was too
 # large for a customer)
-DATE_WINDOW_SIZE = 1
+DATE_WINDOW_SIZE = 30
 
 # We will retry a 500 error a maximum of 5 times before giving up
 MAX_RETRIES = 5
@@ -60,7 +62,7 @@ def retry_after_wait_gen(**kwargs):
     # it was proven to work in our spikes.
     # It's been observed to come through as lowercase, so fallback if not present
     sleep_time_str = resp.headers.get('Retry-After', resp.headers.get('retry-after'))
-    yield math.floor(float(sleep_time_str))
+    yield math.floor(float(sleep_time_str)*2)
 
 
 def error_handling(fnc):
@@ -111,6 +113,34 @@ class OutOfOrderIdsError(Error):
     """Raised if our expectation of ordering by ID is violated"""
 
 
+# data
+
+class ShopifyResource(Enum):
+    Article = "Article"
+    Blog = "Blog"
+    Collection = "Collection"
+    Comment = "Comment"
+    Order = "Order"
+    Page = "Page"
+    PriceRule = "PriceRule"
+    Product = "Product"
+    ApiPermission = "ApiPermission"
+
+    @classmethod
+    def list(cls):
+        return list(map(lambda c: c.value, cls))
+
+    @classmethod
+    def validate_fields(cls, fields: List[str]):
+        errors = []
+        for f in fields:
+            if f not in cls.list():
+                errors.append(f'"{f}" is not valid Shopify resource!')
+        if errors:
+            raise ValueError(
+                ', '.join(errors) + f'\n Supported Resources are: [{cls.list()}]')
+
+
 class ShopifyClient:
 
     def __init__(self, shop: str, access_token: str, api_version: str = '2020-10'):
@@ -148,10 +178,56 @@ class ShopifyClient:
                                           status=status,
                                           **additional_params)
 
+    def get_events(self, updated_at_min: datetime.datetime = None,
+                   updated_at_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
+                   filter_resource: List[Union[ShopifyResource, str]] = None, event_type: str = None,
+                   fields: List[str] = None,
+                   results_per_page: int = RESULTS_PER_PAGE
+
+                   ):
+
+        """
+        Retrieves a list of events.
+
+        Args:
+            updated_at_min:
+            updated_at_max:
+            filter_resource: Filter on certain events by the type of resource it produced. e.g.['Order','Product']
+            event_type:
+                eg 'confirmed', 'create', 'destroy' The type of event that occurred. Different resources generate
+                different types of event. See the [docs](
+                https://shopify.dev/docs/admin-api/rest/reference/events/event#resources-that-can-create-events) for
+                a list of possible verbs.
+            fields: List of fields to limit the response
+            results_per_page:
+
+        Returns:
+
+        """
+
+        additional_params = {}
+        if filter_resource:
+            if isinstance(filter_resource[0], ShopifyResource):
+                filter_resource = [f.name for f in filter_resource]
+            else:
+                ShopifyResource.validate_fields(filter_resource)
+            additional_params['filter'] = ','.join([f for f in filter_resource])
+
+        if event_type:
+            additional_params['verb'] = event_type
+
+        if fields:
+            additional_params['fields'] = fields
+
+        return self.get_objects_paginated(shopify.Event,
+                                          updated_at_min=updated_at_min,
+                                          updated_at_max=updated_at_max,
+                                          results_per_page=results_per_page,
+                                          **additional_params)
+
     def get_customers(self, updated_at_min: datetime.datetime = None,
                       updated_at_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
                       state=None, fields=None, results_per_page=RESULTS_PER_PAGE):
-
         additional_params = {}
         if fields:
             additional_params['fields'] = fields
