@@ -49,7 +49,7 @@ Your shop id found in url, e.g. `[shop_id]`.myshopify.com
 Marks the last_updated date of requested objects. 
 Accepts date in `YYYY-MM-DD` format or dateparser string i.e. `5 days ago`, `1 month ago`, `yesterday`, etc.
 
-## Load type
+### Load type
 
 If set to Incremental update, the result tables will be updated based on primary key.
  Full load overwrites the destination table each time.
