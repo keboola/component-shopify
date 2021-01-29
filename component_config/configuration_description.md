@@ -6,3 +6,6 @@ To enable this application you need to:
     - `Orders`
     - `Products`
     - `Customers`
+    
+    
+Additional documentation is [available here](https://bitbucket.org/kds_consulting_team/kds-team.ex-shopify/src/master/README.md).
