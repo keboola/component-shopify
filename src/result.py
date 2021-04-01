@@ -1,4 +1,5 @@
 import os
+
 from kbc.result import ResultWriter, KBCTableDef
 
 EXTRACTION_TIME = 'extraction_time'
@@ -340,8 +341,9 @@ class ProductsWriter(ResultWriter):
 
     def write(self, data, file_name=None, user_values=None, object_from_arrays=False, write_header=True):
         product_id = data['id']
-        self.product_images_writer.write_all(data.pop('images', []), user_values={
-            EXTRACTION_TIME: self.extraction_time})
+        self.product_images_writer.write_all(data.pop('images', []), user_values={'product_id': product_id,
+                                                                                  EXTRACTION_TIME:
+                                                                                      self.extraction_time})
 
         self.product_options_writer.write_all(data.pop('options', []), user_values={
             EXTRACTION_TIME: self.extraction_time})
