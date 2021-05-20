@@ -120,7 +120,7 @@ class Component(KBCEnvHandler):
         with OrderWriter(self.tables_out_path, 'order', extraction_time=self.extraction_time,
                          customers_writer=self._customer_writer,
                          file_headers=file_headers) as writer:
-            for o in self.client.get_orders(start_date, end_date, results_per_page=1):
+            for o in self.client.get_orders(start_date, end_date):
                 writer.write(o)
 
         results = writer.collect_results()
