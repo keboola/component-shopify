@@ -6,10 +6,11 @@ import datetime
 import logging
 import os
 import sys
-from kbc.env_handler import KBCEnvHandler
-from kbc.result import ResultWriter, KBCTableDef
 from pathlib import Path
 from typing import List
+
+from kbc.env_handler import KBCEnvHandler
+from kbc.result import ResultWriter, KBCTableDef
 
 from result import OrderWriter, ProductsWriter, CustomersWriter
 from shopify_cli import ShopifyClient
@@ -68,6 +69,10 @@ class Component(KBCEnvHandler):
         self.client = ShopifyClient(self.cfg_params[KEY_SHOP], self.cfg_params[KEY_API_TOKEN])
         self.extraction_time = datetime.datetime.now().isoformat()
 
+        # shared customers writer
+        self._customer_writer = CustomersWriter(self.tables_out_path, 'customer', extraction_time=self.extraction_time,
+                                                file_headers=self.get_state_file())
+
     def run(self):
         '''
         Main execution code
@@ -79,24 +84,28 @@ class Component(KBCEnvHandler):
         start_date, end_date = self.get_date_period_converted(params[KEY_LOADING_OPTIONS][KEY_SINCE_DATE],
                                                               params[KEY_LOADING_OPTIONS][KEY_TO_DATE])
         results = []
-        sliced_results = []
         endpoints = params[KEY_ENDPOINTS]
 
-        if KEY_ORDERS in endpoints:
+        if endpoints.get(KEY_ORDERS):
             logging.info(f'Getting orders since {start_date}')
             results.extend(self.download_orders(start_date, end_date, last_state))
 
-        if KEY_PRODUCTS in endpoints:
+        if endpoints.get(KEY_PRODUCTS):
             logging.info(f'Getting products since {start_date}')
             results.extend(self.download_products(start_date, end_date, last_state))
 
-        if KEY_CUSTOMERS in endpoints:
+        if endpoints.get(KEY_CUSTOMERS):
+            # special case, results collected at the end
             logging.info(f'Getting customers since {start_date}')
-            results.extend(self.download_customers(start_date, end_date, last_state))
+            self.download_customers(start_date, end_date, last_state)
 
-        if KEY_EVENTS in endpoints and len(endpoints[KEY_EVENTS]) > 0:
+        if endpoints.get(KEY_EVENTS) and len(endpoints[KEY_EVENTS]) > 0:
             logging.info(f'Getting events since {start_date}')
             results.extend(self.download_events(endpoints[KEY_EVENTS][0], start_date, end_date, last_state))
+
+        # collect customers
+        self._customer_writer.close()
+        results.extend(self._customer_writer.collect_results())
 
         # get current columns and store in state
         headers = {}
@@ -104,14 +113,12 @@ class Component(KBCEnvHandler):
             file_name = os.path.basename(r.full_path)
             headers[file_name] = r.table_def.columns
         self.write_state_file(headers)
-        # separate sliced results
-        sliced_results.extend([results.pop(idx) for idx, r in enumerate(results) if os.path.isdir(r.full_path)])
         incremental = params[KEY_LOADING_OPTIONS].get(KEY_INCREMENTAL_OUTPUT, False)
         self.create_manifests(results, incremental=incremental)
-        self.create_manifests(sliced_results, headless=True, incremental=incremental)
 
     def download_orders(self, start_date, end_date, file_headers):
         with OrderWriter(self.tables_out_path, 'order', extraction_time=self.extraction_time,
+                         customers_writer=self._customer_writer,
                          file_headers=file_headers) as writer:
             for o in self.client.get_orders(start_date, end_date):
                 writer.write(o)
@@ -129,13 +136,8 @@ class Component(KBCEnvHandler):
         return results
 
     def download_customers(self, start_date, end_date, file_headers):
-        with CustomersWriter(self.tables_out_path, 'customer', extraction_time=self.extraction_time,
-                             file_headers=file_headers) as writer:
-            for o in self.client.get_customers(start_date, end_date):
-                writer.write(o)
-
-        results = writer.collect_results()
-        return results
+        for o in self.client.get_customers(start_date, end_date):
+            self._customer_writer.write(o)
 
     def parse_comma_separated_values(self, param) -> List[str]:
         cols = []

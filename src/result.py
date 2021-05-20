@@ -1,5 +1,3 @@
-import os
-
 from kbc.result import ResultWriter, KBCTableDef
 
 EXTRACTION_TIME = 'extraction_time'
@@ -148,7 +146,7 @@ class FulfillmentsWriter(ResultWriter):
 
 class OrderWriter(ResultWriter):
 
-    def __init__(self, result_dir_path, result_name, extraction_time, file_headers=None):
+    def __init__(self, result_dir_path, result_name, extraction_time, customers_writer, file_headers=None):
 
         ResultWriter.__init__(self, result_dir_path,
                               KBCTableDef(name=result_name, pk=['id'],
@@ -203,8 +201,7 @@ class OrderWriter(ResultWriter):
                                              child_separator='__')
 
         # customer writer
-        self.customer_writer = CustomersWriter(result_dir_path, 'order_customer', extraction_time,
-                                               file_headers=file_headers)
+        self.customer_writer = customers_writer
 
     def write(self, data, file_name=None, user_values=None, object_from_arrays=False, write_header=True):
         # flatten obj
@@ -245,7 +242,6 @@ class OrderWriter(ResultWriter):
         results.extend(self.discount_applications_writer.collect_results())
         results.extend(self.tax_lines_writer.collect_results())
         results.extend(self.discount_codes_writer.collect_results())
-        results.extend(self.customer_writer.collect_results())
         results.extend(super().collect_results())
         return results
 
@@ -255,7 +251,6 @@ class OrderWriter(ResultWriter):
         self.discount_applications_writer.close()
         self.discount_codes_writer.close()
         self.tax_lines_writer.close()
-        self.customer_writer.close()
         super().close()
 
 
@@ -377,7 +372,7 @@ class CustomersWriter(ResultWriter):
     """
 
     def __init__(self, result_dir_path, result_name, extraction_time, file_headers):
-        ResultWriter.__init__(self, os.path.join(result_dir_path, 'customers'),
+        ResultWriter.__init__(self, result_dir_path,
                               KBCTableDef(name=result_name, pk=['id'],
                                           columns=file_headers.get(
                                               'customers', []),
@@ -399,17 +394,12 @@ class CustomersWriter(ResultWriter):
         self.address_writer.write_all(data.pop('addresses', []), user_values={
             EXTRACTION_TIME: self.extraction_time})
 
-        super().write(data, user_values=user_values, write_header=False)
+        super().write(data, user_values=user_values, write_header=True)
 
     def collect_results(self):
-        results = []
+        results = super().collect_results()
         results.extend(self.address_writer.collect_results())
 
-        # make sliced table
-        cust_results = super().collect_results()
-        for r in cust_results:
-            r.full_path = self.result_dir_path
-        results.extend(cust_results)
         return results
 
     def close(self):

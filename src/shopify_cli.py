@@ -1,21 +1,21 @@
-from enum import Enum
-
-import backoff
 import datetime
 import functools
 import json
 import logging
 import math
+import sys
+from enum import Enum
+from typing import Type, List, Union
+
+import backoff
 import pyactiveresource
 import pyactiveresource.formats
 import shopify
-import sys
 from pyactiveresource.connection import ResourceNotFound, UnauthorizedAccess
-from typing import Type, List, Union
-
 # ##################  Taken from Sopify Singer-Tap
+from shopify import PaginatedIterator
 
-RESULTS_PER_PAGE = 175
+RESULTS_PER_PAGE = 250
 
 # We've observed 500 errors returned if this is too large (30 days was too
 # large for a customer)
@@ -245,10 +245,10 @@ class ShopifyClient:
 
     @response_error_handling
     @error_handling
-    def call_api_all_pages(self, shopify_object, query_params):
+    def call_api_all_pages(self, shopify_object: Type[shopify.ShopifyResource], query_params):
         # this makes the PaginatedCollection iterator actually fetch all pages automatically
         query_params['no_iter_next'] = False
-        return shopify_object.find(**query_params)
+        return PaginatedIterator(shopify_object.find(**query_params))
 
     def get_objects_paginated(self, shopify_object: Type[shopify.ShopifyResource],
                               updated_at_min: datetime.datetime = None,
@@ -299,10 +299,11 @@ class ShopifyClient:
                 "limit": results_per_page
             }, **kwargs}
 
-            result_page = self.call_api_all_pages(shopify_object, query_params)
+            result_iterator = self.call_api_all_pages(shopify_object, query_params)
 
             # iterate through pages (the iterator does this on the background
-            for obj in result_page:
-                yield obj.to_dict()
+            for collection in result_iterator:
+                for obj in collection:
+                    yield obj.to_dict()
 
             updated_at_min = updated_at_max
