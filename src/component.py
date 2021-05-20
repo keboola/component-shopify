@@ -84,7 +84,6 @@ class Component(KBCEnvHandler):
         start_date, end_date = self.get_date_period_converted(params[KEY_LOADING_OPTIONS][KEY_SINCE_DATE],
                                                               params[KEY_LOADING_OPTIONS][KEY_TO_DATE])
         results = []
-        sliced_results = []
         endpoints = params[KEY_ENDPOINTS]
 
         if endpoints.get(KEY_ORDERS):
