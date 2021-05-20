@@ -15,7 +15,7 @@ from pyactiveresource.connection import ResourceNotFound, UnauthorizedAccess
 # ##################  Taken from Sopify Singer-Tap
 from shopify import PaginatedIterator
 
-RESULTS_PER_PAGE = 500
+RESULTS_PER_PAGE = 250
 
 # We've observed 500 errors returned if this is too large (30 days was too
 # large for a customer)
