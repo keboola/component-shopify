@@ -25,6 +25,7 @@ To enable this application you need to:
 - Enable `Read access` ADMIN API PERMISSIONS for following following objects:
     - `Orders`
     - `Products`
+    - `Inventory`
     - `Customers`
     
     
@@ -59,6 +60,18 @@ If set to Incremental update, the result tables will be updated based on primary
 Following endpoints are supported
 
 ### Products
+
+### Inventory
+
+This allows you to get inventory items, its' levels and locations based on related products.
+
+**NOTE** this endpoint is available only if Products endpoint is checked.
+
+To link product variant with inventory_item and inventory_level follow the diagram below, the datasets can be joined through
+ their primary foreign/primary keys:
+
+![model](https://shopify.dev/assets/api/reference/inventory-4b12bfe5466efda91c64da3c488e58b9b52cce2feae2ad7119115e377b226103.png)
+
 ### Orders
 ### Customers
 
