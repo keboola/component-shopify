@@ -80,9 +80,10 @@ class Component(KBCEnvHandler):
         params = self.cfg_params  # noqa
 
         last_state = self.get_state_file()
+        since = params[KEY_LOADING_OPTIONS].get(KEY_SINCE_DATE) or '2005-01-01'
+        until = params[KEY_LOADING_OPTIONS].get(KEY_TO_DATE) or 'now'
 
-        start_date, end_date = self.get_date_period_converted(params[KEY_LOADING_OPTIONS][KEY_SINCE_DATE],
-                                                              params[KEY_LOADING_OPTIONS][KEY_TO_DATE])
+        start_date, end_date = self.get_date_period_converted(since, until)
         results = []
         endpoints = params[KEY_ENDPOINTS]
 
