@@ -9,6 +9,7 @@ To enable this application you need to:
 - Enable `Read access` ADMIN API PERMISSIONS for following following objects:
     - `Orders`
     - `Products`
+    - `Inventory`
     - `Customers`
     
     

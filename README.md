@@ -1,8 +1,11 @@
-# KBC Component
+# Shopify Extractor
 
 Shopify extractor for Keboola Connection. 
 Download all objects under [Orders](https://shopify.dev/docs/admin-api/rest/reference/orders/order#index-2020-10), 
-[Products](https://shopify.dev/docs/admin-api/rest/reference/products/product), [Event](https://shopify.dev/docs/admin-api/rest/reference/events/event) and 
+[Products](https://shopify.dev/docs/admin-api/rest/reference/products/product), 
+[inventory items](https://shopify.dev/api/admin-rest/2021-10/resources/inventoryitem#resource_object), 
+[levels](https://shopify.dev/api/admin-rest/2021-10/resources/inventorylevel#top), 
+[locations](https://shopify.dev/api/admin-rest/2021-10/resources/location#top)[Event](https://shopify.dev/docs/admin-api/rest/reference/events/event) and 
 [Customer](https://shopify.dev/docs/admin-api/rest/reference/customers) hierarchies. 
 
 Data is always loaded incrementally.
@@ -63,7 +66,9 @@ Following endpoints are supported
 
 ### Inventory
 
-This allows you to get inventory items, its' levels and locations based on related products.
+This allows to retrieve [inventory items](https://shopify.dev/api/admin-rest/2021-10/resources/inventoryitem#resource_object), 
+its' [levels](https://shopify.dev/api/admin-rest/2021-10/resources/inventorylevel#top) 
+and [locations](https://shopify.dev/api/admin-rest/2021-10/resources/location#top) based on related products.
 
 **NOTE** this endpoint is available only if Products endpoint is checked.
 

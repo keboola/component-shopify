@@ -141,7 +141,7 @@ class Component(KBCEnvHandler):
                                                           destination=''),
                                               flatten_objects=True, child_separator='__')
         if self.cfg_params[KEY_ENDPOINTS].get(KEY_INVENTORY):
-            logging.info(f'Getting inventory levels and locations for products')
+            logging.info('Getting inventory levels and locations for products')
 
         with ProductsWriter(self.tables_out_path, 'product',
                             extraction_time=self.extraction_time,
@@ -161,9 +161,6 @@ class Component(KBCEnvHandler):
         results.extend(inventory_level_writer.collect_results())
         results.extend(inventory_writer.collect_results())
         results.extend(self.download_locations())
-
-        if self.cfg_params.get(KEY_INVENTORY):
-            logging.info(f'Getting inventory levels and locations for products')
 
         return results
 
