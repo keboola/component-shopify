@@ -1,8 +1,11 @@
-# KBC Component
+# Shopify Extractor
 
 Shopify extractor for Keboola Connection. 
 Download all objects under [Orders](https://shopify.dev/docs/admin-api/rest/reference/orders/order#index-2020-10), 
-[Products](https://shopify.dev/docs/admin-api/rest/reference/products/product), [Event](https://shopify.dev/docs/admin-api/rest/reference/events/event) and 
+[Products](https://shopify.dev/docs/admin-api/rest/reference/products/product), 
+[inventory items](https://shopify.dev/api/admin-rest/2021-10/resources/inventoryitem#resource_object), 
+[levels](https://shopify.dev/api/admin-rest/2021-10/resources/inventorylevel#top), 
+[locations](https://shopify.dev/api/admin-rest/2021-10/resources/location#top)[Event](https://shopify.dev/docs/admin-api/rest/reference/events/event) and 
 [Customer](https://shopify.dev/docs/admin-api/rest/reference/customers) hierarchies. 
 
 Data is always loaded incrementally.
@@ -25,6 +28,7 @@ To enable this application you need to:
 - Enable `Read access` ADMIN API PERMISSIONS for following following objects:
     - `Orders`
     - `Products`
+    - `Inventory`
     - `Customers`
     
     
@@ -59,6 +63,20 @@ If set to Incremental update, the result tables will be updated based on primary
 Following endpoints are supported
 
 ### Products
+
+### Inventory
+
+This allows to retrieve [inventory items](https://shopify.dev/api/admin-rest/2021-10/resources/inventoryitem#resource_object), 
+its' [levels](https://shopify.dev/api/admin-rest/2021-10/resources/inventorylevel#top) 
+and [locations](https://shopify.dev/api/admin-rest/2021-10/resources/location#top) based on related products.
+
+**NOTE** this endpoint is available only if Products endpoint is checked.
+
+To link product variant with inventory_item and inventory_level follow the diagram below, the datasets can be joined through
+ their primary foreign/primary keys:
+
+![model](https://shopify.dev/assets/api/reference/inventory-4b12bfe5466efda91c64da3c488e58b9b52cce2feae2ad7119115e377b226103.png)
+
 ### Orders
 ### Customers
 

@@ -28,6 +28,7 @@ KEY_ORDERS = 'orders'
 KEY_PRODUCTS = 'products'
 KEY_CUSTOMERS = 'customers'
 KEY_EVENTS = 'events'
+KEY_INVENTORY = 'inventory'
 
 KEY_SHOP = 'shop'
 
@@ -128,13 +129,59 @@ class Component(KBCEnvHandler):
         return results
 
     def download_products(self, start_date, end_date, file_headers):
-        with ProductsWriter(self.tables_out_path, 'product', extraction_time=self.extraction_time,
+        inventory_writer = ResultWriter(self.tables_out_path,
+                                        KBCTableDef(name='inventory_items', pk=['id'],
+                                                    columns=[],
+                                                    destination=''),
+                                        flatten_objects=True, child_separator='__')
+        inventory_level_writer = ResultWriter(self.tables_out_path,
+                                              KBCTableDef(name='inventory_levels',
+                                                          pk=['inventory_item_id', 'location_id'],
+                                                          columns=[],
+                                                          destination=''),
+                                              flatten_objects=True, child_separator='__')
+        if self.cfg_params[KEY_ENDPOINTS].get(KEY_INVENTORY):
+            logging.info('Getting inventory levels and locations for products')
+
+        with ProductsWriter(self.tables_out_path, 'product',
+                            extraction_time=self.extraction_time,
                             file_headers=file_headers) as writer:
             for o in self.client.get_products(start_date, end_date):
-                writer.write(o)
+                variants = [p['variants'] for p in o]
+                inventory_ids = [str(v['inventory_item_id']) for sublist in variants for v in sublist]
+                writer.write_all(o)
+                if o and self.cfg_params[KEY_ENDPOINTS].get(KEY_INVENTORY):
+                    self.download_product_inventory(inventory_writer, inventory_ids)
+                    self.download_product_inventory_levels(inventory_level_writer, inventory_ids)
+
+        inventory_writer.close()
+        inventory_level_writer.close()
 
         results = writer.collect_results()
+        results.extend(inventory_level_writer.collect_results())
+        results.extend(inventory_writer.collect_results())
+        results.extend(self.download_locations())
+
         return results
+
+    def download_locations(self):
+        with ResultWriter(self.tables_out_path,
+                          KBCTableDef(name='locations', pk=['id'],
+                                      columns=[],
+                                      destination=''),
+                          flatten_objects=True, child_separator='__') as writer:
+            for item in self.client.get_locations():
+                writer.write(item)
+
+        return writer.collect_results()
+
+    def download_product_inventory(self, writer, inventory_ids):
+        for item in self.client.get_inventory_items(inventory_ids):
+            writer.write(item)
+
+    def download_product_inventory_levels(self, writer, inventory_ids):
+        for item in self.client.get_inventory_item_levels(inventory_ids):
+            writer.write(item)
 
     def download_customers(self, start_date, end_date, file_headers):
         for o in self.client.get_customers(start_date, end_date):

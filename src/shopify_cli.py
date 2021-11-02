@@ -143,7 +143,7 @@ class ShopifyResource(Enum):
 
 class ShopifyClient:
 
-    def __init__(self, shop: str, access_token: str, api_version: str = '2020-10'):
+    def __init__(self, shop: str, access_token: str, api_version: str = '2021-10'):
         shop_url = f'{shop}.myshopify.com'
         self.session = shopify.Session(shop_url, api_version, access_token)
         shopify.ShopifyResource.activate_session(self.session)
@@ -171,12 +171,44 @@ class ShopifyClient:
         if fields:
             additional_params['fields'] = fields
 
-        return self.get_objects_paginated(shopify.Product,
-                                          updated_at_min=updated_at_min,
-                                          updated_at_max=updated_at_max,
-                                          results_per_page=results_per_page,
-                                          status=status,
-                                          **additional_params)
+        buffered = 0
+        buffer = []
+        for p in self.get_objects_paginated(shopify.Product,
+                                            updated_at_min=updated_at_min,
+                                            updated_at_max=updated_at_max,
+                                            results_per_page=results_per_page,
+                                            status=status,
+                                            **additional_params):
+            buffered += 1
+            buffer.append(p)
+            if buffered >= 95:
+                results = buffer.copy()
+                buffer = []
+                yield results
+        yield buffer
+
+    def get_inventory_items(self, inventory_ids: list,
+                            results_per_page=RESULTS_PER_PAGE):
+
+        additional_params = {}
+        additional_params['ids'] = ','.join(inventory_ids)
+        return self.get_objects_paginated_simple(shopify.InventoryItem,
+                                                 results_per_page=results_per_page,
+                                                 **additional_params)
+
+    def get_inventory_item_levels(self, inventory_ids: list,
+                                  results_per_page=RESULTS_PER_PAGE):
+
+        additional_params = {}
+        additional_params['inventory_item_ids'] = ','.join(inventory_ids)
+        return self.get_objects_paginated_simple(shopify.InventoryLevel,
+                                                 results_per_page=results_per_page,
+                                                 **additional_params)
+
+    def get_locations(self, results_per_page=RESULTS_PER_PAGE):
+
+        return self.get_objects_paginated_simple(shopify.Location,
+                                                 results_per_page=results_per_page)
 
     def get_events(self, updated_at_min: datetime.datetime = None,
                    updated_at_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
@@ -249,6 +281,20 @@ class ShopifyClient:
         # this makes the PaginatedCollection iterator actually fetch all pages automatically
         query_params['no_iter_next'] = False
         return PaginatedIterator(shopify_object.find(**query_params))
+
+    def get_objects_paginated_simple(self, shopify_object: Type[shopify.ShopifyResource],
+                                     results_per_page=RESULTS_PER_PAGE,
+                                     **kwargs):
+        query_params = {**{
+            "limit": results_per_page
+        }, **kwargs}
+
+        result_iterator = self.call_api_all_pages(shopify_object, query_params)
+
+        # iterate through pages (the iterator does this on the background
+        for collection in result_iterator:
+            for obj in collection:
+                yield obj.to_dict()
 
     def get_objects_paginated(self, shopify_object: Type[shopify.ShopifyResource],
                               updated_at_min: datetime.datetime = None,

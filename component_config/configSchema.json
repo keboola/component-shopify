@@ -8,95 +8,18 @@
     "endpoints"
   ],
   "properties": {
-    "#api_token": {
-      "type": "string",
-      "title": "Admin password",
-      "format": "password",
-      "description": "Admin password of your Shopify private app.",
-      "propertyOrder": 200
-    },
     "shop": {
       "type": "string",
       "title": "Shop name",
       "description": "Your shop id found in url, e.g. [shop_id].myshopify.com",
       "propertyOrder": 250
     },
-    "loading_options": {
-      "type": "object",
-      "title": "Loading Options",
-      "propertyOrder": 400,
-      "format": "grid",
-      "required": [
-        "incremental_output",
-        "date_since",
-        "date_to"
-      ],
-      "properties": {
-        "date_since": {
-          "type": "string",
-          "title": "Period from date [including].",
-          "default": "1 week ago",
-          "description": " Date in YYYY-MM-DD format or dateparser string i.e. 5 days ago, 1 month ago, yesterday, etc. If left empty, all records are downloaded.",
-          "propertyOrder": 300
-        },
-        "date_to": {
-          "type": "string",
-          "title": "Period to date [excluding].",
-          "default": "now",
-          "description": " Date in YYYY-MM-DD format or dateparser string i.e. 5 days ago, 1 month ago, yesterday, etc. If left empty, all records are downloaded.",
-          "propertyOrder": 400
-        },
-        "incremental_output": {
-          "type": "number",
-          "enum": [
-            0,
-            1
-          ],
-          "options": {
-            "enum_titles": [
-              "Full Load",
-              "Incremental Update"
-            ]
-          },
-          "default": 1,
-          "title": "Load type",
-          "description": "If set to Incremental update, the result tables will be updated based on primary key. Full load overwrites the destination table each time. NOTE: If you wish to remove deleted records, this needs to be set to Full load and the Period from attribute empty.",
-          "propertyOrder": 450
-        }
-      }
-    },
     "endpoints": {
       "type": "object",
       "title": "Endpoints",
-      "propertyOrder": 500,
       "properties": {
-        "orders": {
-          "type": "boolean",
-          "title": "Orders",
-          "default": true,
-          "format": "checkbox",
-          "propertyOrder": 30
-        },
-        "products": {
-          "type": "boolean",
-          "title": "Products",
-          "default": true,
-          "format": "checkbox",
-          "propertyOrder": 40
-        },
-        "customers": {
-          "type": "boolean",
-          "title": "Customers",
-          "default": true,
-          "format": "checkbox",
-          "propertyOrder": 45
-        },
         "events": {
           "type": "array",
-          "title": "Events",
-          "description": "Download Events.",
-          "propertyOrder": 4000,
-          "maxItems": 1,
           "items": {
             "type": "object",
             "title": "Setup",
@@ -105,10 +28,19 @@
               "types"
             ],
             "properties": {
+              "types": {
+                "type": "string",
+                "title": "Event Types",
+                "format": "textarea",
+                "options": {
+                  "input_height": "100px"
+                },
+                "description": "Comma separated list of required event types. e.g. 'confirmed', 'create', 'destroy'. If omitted all possible types are downloaded.  Different resources generate different types of event. See the docs for a list of possible verbs.",
+                "uniqueItems": true,
+                "propertyOrder": 700
+              },
               "filters": {
                 "type": "array",
-                "title": "Types",
-                "description": "Resource Types",
                 "items": {
                   "enum": [
                     "Article",
@@ -123,25 +55,106 @@
                   ],
                   "type": "string"
                 },
+                "title": "Types",
                 "format": "select",
+                "description": "Resource Types",
                 "uniqueItems": true,
                 "propertyOrder": 360
-              },
-              "types": {
-                "type": "string",
-                "title": "Event Types",
-                "format": "textarea",
-                "options": {
-                  "input_height": "100px"
-                },
-                "description": "Comma separated list of required event types. e.g. 'confirmed', 'create', 'destroy'. If omitted all possible types are downloaded.  Different resources generate different types of event. See the docs for a list of possible verbs.",
-                "uniqueItems": true,
-                "propertyOrder": 700
               }
             }
-          }
+          },
+          "title": "Events",
+          "maxItems": 1,
+          "description": "Download Events.",
+          "propertyOrder": 4000
+        },
+        "orders": {
+          "type": "boolean",
+          "title": "Orders",
+          "format": "checkbox",
+          "default": true,
+          "propertyOrder": 30
+        },
+        "products": {
+          "type": "boolean",
+          "title": "Products",
+          "format": "checkbox",
+          "default": true,
+          "propertyOrder": 40
+        },
+        "customers": {
+          "type": "boolean",
+          "title": "Customers",
+          "format": "checkbox",
+          "default": true,
+          "propertyOrder": 45
+        },
+        "inventory": {
+          "type": "boolean",
+          "title": "Inventory",
+          "format": "checkbox",
+          "default": true,
+          "options": {
+            "dependencies": {
+              "products": true
+            }
+          },
+          "description": "Get inventory levels and locations related to products",
+          "propertyOrder": 41
         }
-      }
+      },
+      "propertyOrder": 500
+    },
+    "#api_token": {
+      "type": "string",
+      "title": "Admin password",
+      "format": "password",
+      "description": "Admin password of your Shopify private app.",
+      "propertyOrder": 200
+    },
+    "loading_options": {
+      "type": "object",
+      "title": "Loading Options",
+      "format": "grid",
+      "required": [
+        "incremental_output",
+        "date_since",
+        "date_to"
+      ],
+      "properties": {
+        "date_to": {
+          "type": "string",
+          "title": "Period to date [excluding].",
+          "default": "now",
+          "description": " Date in YYYY-MM-DD format or dateparser string i.e. 5 days ago, 1 month ago, yesterday, etc. If left empty, all records are downloaded.",
+          "propertyOrder": 400
+        },
+        "date_since": {
+          "type": "string",
+          "title": "Period from date [including].",
+          "default": "1 week ago",
+          "description": " Date in YYYY-MM-DD format or dateparser string i.e. 5 days ago, 1 month ago, yesterday, etc. If left empty, all records are downloaded.",
+          "propertyOrder": 300
+        },
+        "incremental_output": {
+          "enum": [
+            0,
+            1
+          ],
+          "type": "number",
+          "title": "Load type",
+          "default": 1,
+          "options": {
+            "enum_titles": [
+              "Full Load",
+              "Incremental Update"
+            ]
+          },
+          "description": "If set to Incremental update, the result tables will be updated based on primary key. Full load overwrites the destination table each time. NOTE: If you wish to remove deleted records, this needs to be set to Full load and the Period from attribute empty.",
+          "propertyOrder": 450
+        }
+      },
+      "propertyOrder": 400
     }
   }
 }
