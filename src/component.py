@@ -73,6 +73,12 @@ class Component(KBCEnvHandler):
         # shared customers writer
         self._customer_writer = CustomersWriter(self.tables_out_path, 'customer', extraction_time=self.extraction_time,
                                                 file_headers=self.get_state_file())
+        self._metafields_writer = ResultWriter(self.tables_out_path,
+                                               KBCTableDef(name='metafields',
+                                                           pk=['id'],
+                                                           columns=[],
+                                                           destination=''),
+                                               flatten_objects=True, child_separator='__')
 
     def run(self):
         '''
@@ -108,6 +114,10 @@ class Component(KBCEnvHandler):
         # collect customers
         self._customer_writer.close()
         results.extend(self._customer_writer.collect_results())
+
+        # collect metafields
+        self._metafields_writer.close()
+        results.extend(self._metafields_writer.collect_results())
 
         # get current columns and store in state
         headers = {}
@@ -154,6 +164,12 @@ class Component(KBCEnvHandler):
                     self.download_product_inventory(inventory_writer, inventory_ids)
                     self.download_product_inventory_levels(inventory_level_writer, inventory_ids)
 
+                if self.cfg_params[KEY_ENDPOINTS].get('product_metafields'):
+                    self.download_metafields('products', [p['id'] for p in o])
+
+                if self.cfg_params[KEY_ENDPOINTS].get('variant_metafields'):
+                    self.download_metafields('variants', [v['id'] for sublist in variants for v in sublist])
+
         inventory_writer.close()
         inventory_level_writer.close()
 
@@ -174,6 +190,11 @@ class Component(KBCEnvHandler):
                 writer.write(item)
 
         return writer.collect_results()
+
+    def download_metafields(self, object_type: str, owner_ids: List[str]):
+        for oid in owner_ids:
+            for metafield in self.client.get_metafields(object_type, oid):
+                self._metafields_writer.write(metafield)
 
     def download_product_inventory(self, writer, inventory_ids):
         for item in self.client.get_inventory_items(inventory_ids):

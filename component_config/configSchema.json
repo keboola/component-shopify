@@ -101,6 +101,32 @@
           },
           "description": "Get inventory levels and locations related to products",
           "propertyOrder": 41
+        },
+        "product_metafields": {
+          "type": "boolean",
+          "title": "Product Metafields",
+          "format": "checkbox",
+          "default": false,
+          "options": {
+            "dependencies": {
+              "products": true
+            }
+          },
+          "description": "Get metafields related to products",
+          "propertyOrder": 42
+        },
+        "variant_metafields": {
+          "type": "boolean",
+          "title": "Variant Metafields",
+          "format": "checkbox",
+          "default": false,
+          "options": {
+            "dependencies": {
+              "products": true
+            }
+          },
+          "description": "Get metafields related to product variants",
+          "propertyOrder": 43
         }
       },
       "propertyOrder": 500

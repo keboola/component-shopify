@@ -163,6 +163,13 @@ class ShopifyClient:
                                           status=status,
                                           **additional_params)
 
+    def get_metafields(self, resource: str, resource_id: str, results_per_page=RESULTS_PER_PAGE):
+
+        additional_params = {'resource': resource, 'resource_id': resource_id}
+
+        return self.get_objects_paginated_simple(shopify.Metafield, results_per_page,
+                                                 **additional_params)
+
     def get_products(self, updated_at_min: datetime.datetime = None,
                      updated_at_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
                      status='active', fields=None, results_per_page=RESULTS_PER_PAGE):
