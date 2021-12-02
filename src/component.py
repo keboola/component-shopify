@@ -57,6 +57,8 @@ class Component(KBCEnvHandler):
         else:
             logging.getLogger('pyactiveresource.connection').setLevel(
                 logging.WARNING)  # avoid detail logs from the library
+            logging.getLogger('backoff').setLevel(
+                logging.WARNING)  # avoid detail logs from the library
         logging.info('Loading configuration...')
 
         try:

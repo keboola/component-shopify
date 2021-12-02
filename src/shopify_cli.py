@@ -11,7 +11,8 @@ import backoff
 import pyactiveresource
 import pyactiveresource.formats
 import shopify
-from pyactiveresource.connection import ResourceNotFound, UnauthorizedAccess
+from pyactiveresource.connection import ResourceNotFound, UnauthorizedAccess, ClientError
+
 # ##################  Taken from Sopify Singer-Tap
 from shopify import PaginatedIterator
 
@@ -61,7 +62,7 @@ def retry_after_wait_gen(**kwargs):
     # Retry-After is an undocumented header. But honoring
     # it was proven to work in our spikes.
     # It's been observed to come through as lowercase, so fallback if not present
-    sleep_time_str = resp.headers.get('Retry-After', resp.headers.get('retry-after'))
+    sleep_time_str = resp.headers.get('Retry-After', resp.headers.get('retry-after', 0))
     yield math.floor(float(sleep_time_str) * 2)
 
 
@@ -101,6 +102,9 @@ def response_error_handling(func):
         except UnauthorizedAccess as e:
             error_msg = json.loads(e.response.body.decode('utf-8'))["errors"]
             raise ShopifyClientError(f'{error_msg}; Please check your credentials and app permissions!') from e
+        except ClientError as e:
+            error_msg = json.loads(e.response.body.decode('utf-8'))["errors"]
+            raise ShopifyClientError(f'Request to {e.url} failed; Error: {error_msg}') from e
 
     return wrapper
 
