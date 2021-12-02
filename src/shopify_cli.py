@@ -11,7 +11,8 @@ import backoff
 import pyactiveresource
 import pyactiveresource.formats
 import shopify
-from pyactiveresource.connection import ResourceNotFound, UnauthorizedAccess
+from pyactiveresource.connection import ResourceNotFound, UnauthorizedAccess, ClientError
+
 # ##################  Taken from Sopify Singer-Tap
 from shopify import PaginatedIterator
 
@@ -61,8 +62,8 @@ def retry_after_wait_gen(**kwargs):
     # Retry-After is an undocumented header. But honoring
     # it was proven to work in our spikes.
     # It's been observed to come through as lowercase, so fallback if not present
-    sleep_time_str = resp.headers.get('Retry-After', resp.headers.get('retry-after'))
-    yield math.floor(float(sleep_time_str) * 2)
+    sleep_time_str = resp.headers.get('Retry-After', resp.headers.get('retry-after', 0))
+    yield math.floor(float(sleep_time_str) * 1.5)
 
 
 def error_handling(fnc):
@@ -101,6 +102,9 @@ def response_error_handling(func):
         except UnauthorizedAccess as e:
             error_msg = json.loads(e.response.body.decode('utf-8'))["errors"]
             raise ShopifyClientError(f'{error_msg}; Please check your credentials and app permissions!') from e
+        except ClientError as e:
+            error_msg = json.loads(e.response.body.decode('utf-8'))["errors"]
+            raise ShopifyClientError(f'Request to {e.url} failed; Error: {error_msg}') from e
 
     return wrapper
 
@@ -172,7 +176,20 @@ class ShopifyClient:
 
     def get_products(self, updated_at_min: datetime.datetime = None,
                      updated_at_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
-                     status='active', fields=None, results_per_page=RESULTS_PER_PAGE):
+                     status='active', fields=None, results_per_page=RESULTS_PER_PAGE, return_chunk_size=90):
+        """
+        Get products
+        Args:
+            updated_at_min:
+            updated_at_max:
+            status:
+            fields:
+            results_per_page:
+            return_chunk_size: Max size of the chunk of products to return
+
+        Returns: Generator object, list of products
+
+        """
 
         additional_params = {}
         if fields:
@@ -188,7 +205,7 @@ class ShopifyClient:
                                             **additional_params):
             buffered += 1
             buffer.append(p)
-            if buffered >= 95:
+            if buffered >= return_chunk_size:
                 results = buffer.copy()
                 buffer = []
                 yield results

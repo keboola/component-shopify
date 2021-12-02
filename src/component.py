@@ -57,6 +57,8 @@ class Component(KBCEnvHandler):
         else:
             logging.getLogger('pyactiveresource.connection').setLevel(
                 logging.WARNING)  # avoid detail logs from the library
+            logging.getLogger('backoff').setLevel(
+                logging.WARNING)  # avoid detail logs from the library
         logging.info('Loading configuration...')
 
         try:
@@ -197,12 +199,36 @@ class Component(KBCEnvHandler):
                 self._metafields_writer.write(metafield)
 
     def download_product_inventory(self, writer, inventory_ids):
-        for item in self.client.get_inventory_items(inventory_ids):
-            writer.write(item)
+        for chunk in self._split_array_to_chunks(inventory_ids, 49):
+            for item in self.client.get_inventory_items(chunk):
+                writer.write(item)
 
     def download_product_inventory_levels(self, writer, inventory_ids):
-        for item in self.client.get_inventory_item_levels(inventory_ids):
-            writer.write(item)
+        for chunk in self._split_array_to_chunks(inventory_ids, 49):
+            for item in self.client.get_inventory_item_levels(chunk):
+                writer.write(item)
+
+    def _split_array_to_chunks(self, items: list, chunk_size: int):
+        """
+        Helper method to split items into chunks of specified size
+        Args:
+            items:
+            chunk_size:
+
+        Returns:
+
+        """
+        buffered = 0
+        buffer = []
+        for p in items:
+            buffered += 1
+            buffer.append(p)
+            if buffered >= chunk_size:
+                results = buffer.copy()
+                buffer = []
+                yield results
+        if buffer:
+            yield buffer
 
     def download_customers(self, start_date, end_date, file_headers):
         for o in self.client.get_customers(start_date, end_date):
