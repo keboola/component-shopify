@@ -227,7 +227,8 @@ class Component(KBCEnvHandler):
                 results = buffer.copy()
                 buffer = []
                 yield results
-        yield buffer
+        if buffer:
+            yield buffer
 
     def download_customers(self, start_date, end_date, file_headers):
         for o in self.client.get_customers(start_date, end_date):
