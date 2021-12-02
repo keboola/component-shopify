@@ -172,7 +172,20 @@ class ShopifyClient:
 
     def get_products(self, updated_at_min: datetime.datetime = None,
                      updated_at_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
-                     status='active', fields=None, results_per_page=RESULTS_PER_PAGE):
+                     status='active', fields=None, results_per_page=RESULTS_PER_PAGE, return_chunk_size=90):
+        """
+        Get products
+        Args:
+            updated_at_min:
+            updated_at_max:
+            status:
+            fields:
+            results_per_page:
+            return_chunk_size: Max size of the chunk of products to return
+
+        Returns: Generator object, list of products
+
+        """
 
         additional_params = {}
         if fields:
@@ -188,7 +201,7 @@ class ShopifyClient:
                                             **additional_params):
             buffered += 1
             buffer.append(p)
-            if buffered >= 95:
+            if buffered >= return_chunk_size:
                 results = buffer.copy()
                 buffer = []
                 yield results
