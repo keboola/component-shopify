@@ -133,9 +133,9 @@
     },
     "#api_token": {
       "type": "string",
-      "title": "Admin password",
+      "title": "Admin API access token",
       "format": "password",
-      "description": "Admin password of your Shopify private app.",
+      "description": "Admin API access token of your Shopify custom app.",
       "propertyOrder": 200
     },
     "loading_options": {

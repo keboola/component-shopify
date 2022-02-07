@@ -40,6 +40,10 @@ MANDATORY_PARS = [KEY_API_TOKEN, KEY_SHOP, KEY_LOADING_OPTIONS, KEY_ENDPOINTS]
 MANDATORY_IMAGE_PARS = []
 
 
+class UserException(Exception):
+    pass
+
+
 class Component(KBCEnvHandler):
 
     def __init__(self, debug=False):
@@ -68,6 +72,8 @@ class Component(KBCEnvHandler):
         except ValueError as e:
             logging.exception(e)
             exit(1)
+
+        self.validate_api_token(self.cfg_params[KEY_API_TOKEN])
 
         self.client = ShopifyClient(self.cfg_params[KEY_SHOP], self.cfg_params[KEY_API_TOKEN])
         self.extraction_time = datetime.datetime.now().isoformat()
@@ -272,6 +278,15 @@ class Component(KBCEnvHandler):
 
         results = writer.collect_results()
         return results
+
+    @staticmethod
+    def validate_api_token(token):
+        try:
+            for letter in token:
+                letter.encode('latin-1')
+        except UnicodeEncodeError:
+            raise UserException("Password/API token that was entered is not valid, please re-enter it."
+                                " Make sure to follow the custom app creation in the description of the component")
 
 
 """
