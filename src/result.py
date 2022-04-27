@@ -375,7 +375,7 @@ class CustomersWriter(ResultWriter):
         ResultWriter.__init__(self, result_dir_path,
                               KBCTableDef(name=result_name, pk=['id'],
                                           columns=file_headers.get(
-                                              'customers.csv', []),
+                                              'customer.csv', []),
                                           destination=''),
                               fix_headers=True, flatten_objects=True, child_separator='__')
         self.extraction_time = extraction_time
