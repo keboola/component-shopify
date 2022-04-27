@@ -3,4 +3,4 @@ mock
 freezegun
 ShopifyAPI==10.0.0
 pyactiveresource==2.2.2
-backoff
+backoff==1.11.1
