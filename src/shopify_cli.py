@@ -12,7 +12,6 @@ import pyactiveresource
 import pyactiveresource.formats
 import shopify
 from pyactiveresource.connection import ResourceNotFound, UnauthorizedAccess, ClientError
-
 # ##################  Taken from Sopify Singer-Tap
 from shopify import PaginatedIterator
 
@@ -57,7 +56,10 @@ def retry_handler(details):
 def retry_after_wait_gen(**kwargs):
     # This is called in an except block so we can retrieve the exception
     # and check it.
+
     exc_info = sys.exc_info()
+    if exc_info[1] is None:
+        yield 0
     resp = exc_info[1].response
     # Retry-After is an undocumented header. But honoring
     # it was proven to work in our spikes.
