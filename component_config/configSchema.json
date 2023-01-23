@@ -14,6 +14,14 @@
       "description": "Your shop id found in url, e.g. [shop_id].myshopify.com",
       "propertyOrder": 250
     },
+    "api_version": {
+      "type": "string",
+      "title": "API version",
+      "default": "2022-04",
+      "description": "The API version, gets updated regularly based on the <a href=\"https://shopify.dev/api/usage/versioning#release-schedule\">Shopify release cycle</a>",
+      "propertyOrder": 251,
+      "readOnly": true
+    },
     "endpoints": {
       "type": "object",
       "title": "Endpoints",
