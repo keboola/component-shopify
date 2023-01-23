@@ -149,7 +149,7 @@ class ShopifyResource(Enum):
 
 class ShopifyClient:
 
-    def __init__(self, shop: str, access_token: str, api_version: str = '2021-10'):
+    def __init__(self, shop: str, access_token: str, api_version: str = '2022-04'):
         shop_url = f'{shop}.myshopify.com'
         self.session = shopify.Session(shop_url, api_version, access_token)
         shopify.ShopifyResource.activate_session(self.session)
