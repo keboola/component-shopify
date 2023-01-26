@@ -59,7 +59,7 @@ def retry_after_wait_gen(**kwargs):
 
     exc_info = sys.exc_info()
     if exc_info[1] is None:
-        yield 0
+        yield 1
     elif exc_info[1]:
         resp = exc_info[1].response
         # Retry-After is an undocumented header. But honoring
