@@ -60,12 +60,13 @@ def retry_after_wait_gen(**kwargs):
     exc_info = sys.exc_info()
     if exc_info[1] is None:
         yield 0
-    resp = exc_info[1].response
-    # Retry-After is an undocumented header. But honoring
-    # it was proven to work in our spikes.
-    # It's been observed to come through as lowercase, so fallback if not present
-    sleep_time_str = resp.headers.get('Retry-After', resp.headers.get('retry-after', 0))
-    yield math.floor(float(sleep_time_str) * 1.5)
+    elif exc_info[1]:
+        resp = exc_info[1].response
+        # Retry-After is an undocumented header. But honoring
+        # it was proven to work in our spikes.
+        # It's been observed to come through as lowercase, so fallback if not present
+        sleep_time_str = resp.headers.get('Retry-After', resp.headers.get('retry-after', 0))
+        yield math.floor(float(sleep_time_str) * 1.5)
 
 
 def error_handling(fnc):
