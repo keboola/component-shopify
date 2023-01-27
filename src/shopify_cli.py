@@ -385,7 +385,6 @@ class ShopifyClient:
             # iterate through pages (the iterator does this on the background
             for collection in result_iterator:
                 self.check_api_limit_use()
-                logging.info("fetched page")
                 for obj in collection:
                     yield obj.to_dict()
 
