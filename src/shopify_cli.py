@@ -2,6 +2,7 @@ import datetime
 import functools
 import json
 import logging
+import time
 import math
 import sys
 from enum import Enum
@@ -23,6 +24,7 @@ DATE_WINDOW_SIZE = 30
 
 # We will retry a 500 error a maximum of 5 times before giving up
 MAX_RETRIES = 5
+BASE_SLEEP_TIME = 10
 
 
 class ShopifyClientError(Exception):
@@ -57,9 +59,12 @@ def retry_after_wait_gen(**kwargs):
     # This is called in an except block so we can retrieve the exception
     # and check it.
 
+    # Advance past initial .send() call
+    yield  # type: ignore[misc]
+
     exc_info = sys.exc_info()
     if exc_info[1] is None:
-        yield 1
+        yield 5
     elif exc_info[1]:
         resp = exc_info[1].response
         # Retry-After is an undocumented header. But honoring
@@ -77,7 +82,7 @@ def error_handling(fnc):
                           giveup=is_not_status_code_fn(range(500, 599)),
                           on_backoff=retry_handler,
                           max_tries=MAX_RETRIES)
-    @backoff.on_exception(backoff.expo,
+    @backoff.on_exception(retry_after_wait_gen,
                           pyactiveresource.connection.ClientError,
                           giveup=is_not_status_code_fn([429]),
                           on_backoff=leaky_bucket_handler,
@@ -154,6 +159,7 @@ class ShopifyClient:
     def __init__(self, shop: str, access_token: str, api_version: str = '2022-04'):
         shop_url = f'{shop}.myshopify.com'
         self.session = shopify.Session(shop_url, api_version, access_token)
+        self.wait_time_seconds = BASE_SLEEP_TIME
         shopify.ShopifyResource.activate_session(self.session)
 
     def get_orders(self, updated_at_min: datetime.datetime = None,
@@ -321,6 +327,7 @@ class ShopifyClient:
 
         # iterate through pages (the iterator does this on the background
         for collection in result_iterator:
+            self.check_api_limit_use()
             for obj in collection:
                 yield obj.to_dict()
 
@@ -377,7 +384,14 @@ class ShopifyClient:
 
             # iterate through pages (the iterator does this on the background
             for collection in result_iterator:
+                self.check_api_limit_use()
+                logging.info("fetched page")
                 for obj in collection:
                     yield obj.to_dict()
 
             updated_at_min = updated_at_max
+
+    def check_api_limit_use(self):
+        used_credits, max_credits = shopify.Limits.api_credit_limit_param()
+        if int(used_credits) >= int(max_credits) - 1:
+            time.sleep(self.wait_time_seconds)
