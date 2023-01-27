@@ -86,7 +86,6 @@ def error_handling(fnc):
                           pyactiveresource.connection.ClientError,
                           giveup=is_not_status_code_fn([429]),
                           on_backoff=leaky_bucket_handler,
-                          max_tries=MAX_RETRIES,
                           # No jitter as we want a constant value
                           jitter=None)
     @functools.wraps(fnc)
