@@ -61,7 +61,7 @@ Your shop id found in url, e.g. `[shop_id]`.myshopify.com
 
 ### Period from and to dates
 
-Marks the last_updated date of requested objects. 
+Will fetch data filtering on the Last Update date. Any data that was updated in the range will be fetched.
 Accepts date in `YYYY-MM-DD` format or dateparser string i.e. `5 days ago`, `1 month ago`, `yesterday`, etc.
 
 ### Load type
