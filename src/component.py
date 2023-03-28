@@ -7,10 +7,10 @@ import logging
 import os
 import sys
 from pathlib import Path
+from typing import List
 
 from kbc.env_handler import KBCEnvHandler
 from kbc.result import ResultWriter, KBCTableDef
-from typing import List
 
 from result import OrderWriter, ProductsWriter, CustomersWriter
 from shopify_cli import ShopifyClient
@@ -88,7 +88,7 @@ class Component(KBCEnvHandler):
                                                            columns=self.get_state_file().get(
                                                                'metafields.csv', []),
                                                            destination=''),
-                                               flatten_objects=True, child_separator='__')
+                                               flatten_objects=True, child_separator='__', fix_headers=True)
 
     def run(self):
         '''
