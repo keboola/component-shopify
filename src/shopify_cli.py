@@ -2,19 +2,19 @@ import datetime
 import functools
 import json
 import logging
-import time
-import math
 import sys
+import time
 from enum import Enum
-from typing import Type, List, Union
 
 import backoff
+import math
 import pyactiveresource
 import pyactiveresource.formats
 import shopify
 from pyactiveresource.connection import ResourceNotFound, UnauthorizedAccess, ClientError
 # ##################  Taken from Sopify Singer-Tap
 from shopify import PaginatedIterator
+from typing import Type, List, Union
 
 RESULTS_PER_PAGE = 250
 
@@ -155,7 +155,7 @@ class ShopifyResource(Enum):
 
 class ShopifyClient:
 
-    def __init__(self, shop: str, access_token: str, api_version: str = '2022-04'):
+    def __init__(self, shop: str, access_token: str, api_version: str = '2022-10'):
         shop_url = f'{shop}.myshopify.com'
         self.session = shopify.Session(shop_url, api_version, access_token)
         self.wait_time_seconds = BASE_SLEEP_TIME

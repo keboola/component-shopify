@@ -76,7 +76,7 @@ class Component(KBCEnvHandler):
         self.validate_api_token(self.cfg_params[KEY_API_TOKEN])
 
         self.client = ShopifyClient(self.cfg_params[KEY_SHOP], self.cfg_params[KEY_API_TOKEN],
-                                    self.cfg_params.get('api_version', '2022-04'))
+                                    self.cfg_params.get('api_version', '2022-10'))
         self.extraction_time = datetime.datetime.now().isoformat()
 
         # shared customers writer
