@@ -76,7 +76,7 @@ class Component(KBCEnvHandler):
         self.validate_api_token(self.cfg_params[KEY_API_TOKEN])
 
         self.client = ShopifyClient(self.cfg_params[KEY_SHOP], self.cfg_params[KEY_API_TOKEN],
-                                    self.cfg_params.get('api_version', '2022-04'))
+                                    self.cfg_params.get('api_version', '2022-10'))
         self.extraction_time = datetime.datetime.now().isoformat()
 
         # shared customers writer
@@ -85,9 +85,10 @@ class Component(KBCEnvHandler):
         self._metafields_writer = ResultWriter(self.tables_out_path,
                                                KBCTableDef(name='metafields',
                                                            pk=['id'],
-                                                           columns=[],
+                                                           columns=self.get_state_file().get(
+                                                               'metafields.csv', []),
                                                            destination=''),
-                                               flatten_objects=True, child_separator='__')
+                                               flatten_objects=True, child_separator='__', fix_headers=True)
 
     def run(self):
         '''
