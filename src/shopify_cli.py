@@ -2,19 +2,19 @@ import datetime
 import functools
 import json
 import logging
+import math
 import sys
 import time
 from enum import Enum
+from typing import Type, List, Union
 
 import backoff
-import math
 import pyactiveresource
 import pyactiveresource.formats
 import shopify
 from pyactiveresource.connection import ResourceNotFound, UnauthorizedAccess, ClientError
 # ##################  Taken from Sopify Singer-Tap
 from shopify import PaginatedIterator
-from typing import Type, List, Union
 
 RESULTS_PER_PAGE = 250
 
@@ -390,6 +390,10 @@ class ShopifyClient:
             updated_at_min = updated_at_max
 
     def check_api_limit_use(self):
-        used_credits, max_credits = shopify.Limits.api_credit_limit_param()
+        try:
+            used_credits, max_credits = shopify.Limits.api_credit_limit_param()
+        except Exception as e:
+            logging.warning(f"Failed to get credits from response: {e}: {shopify.Limits.response()}")
+            used_credits, max_credits = 1, 1
         if int(used_credits) >= int(max_credits) - 1:
             time.sleep(self.wait_time_seconds)
