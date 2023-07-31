@@ -2,19 +2,19 @@ import datetime
 import functools
 import json
 import logging
+import math
 import sys
 import time
 from enum import Enum
+from typing import Type, List, Union
 
 import backoff
-import math
 import pyactiveresource
 import pyactiveresource.formats
 import shopify
 from pyactiveresource.connection import ResourceNotFound, UnauthorizedAccess, ClientError
 # ##################  Taken from Sopify Singer-Tap
 from shopify import PaginatedIterator
-from typing import Type, List, Union
 
 RESULTS_PER_PAGE = 250
 
@@ -390,6 +390,24 @@ class ShopifyClient:
             updated_at_min = updated_at_max
 
     def check_api_limit_use(self):
-        used_credits, max_credits = shopify.Limits.api_credit_limit_param()
+        used_credits, max_credits = self._try_get_credits()
         if int(used_credits) >= int(max_credits) - 1:
             time.sleep(self.wait_time_seconds)
+
+    def _try_get_credits(self):
+        """
+        Sometimes shopify.Limits.api_credit_limit_param() fails because the X-Shopify-Shop-Api-Call-Limit is lower case
+        Returns:
+
+        """
+        used_credits, max_credits = 1, 1
+        lower_case_ratelimit = shopify.Limits.CREDIT_LIMIT_HEADER_PARAM.lower()
+        header_found = False
+        for key, value in shopify.Limits.response().headers.items():
+            if key.lower() == lower_case_ratelimit:
+                used_credits, max_credits = value.split("/")
+                header_found = True
+                break
+        if not header_found:
+            logging.warning(f"Header {lower_case_ratelimit} was not found in the response!")
+        return used_credits, max_credits
