@@ -390,10 +390,24 @@ class ShopifyClient:
             updated_at_min = updated_at_max
 
     def check_api_limit_use(self):
-        try:
-            used_credits, max_credits = shopify.Limits.api_credit_limit_param()
-        except Exception as e:
-            logging.warning(f"Failed to get credits from response: {e}: {shopify.Limits.response()}")
-            used_credits, max_credits = 1, 1
+        used_credits, max_credits = self._try_get_credits()
         if int(used_credits) >= int(max_credits) - 1:
             time.sleep(self.wait_time_seconds)
+
+    def _try_get_credits(self):
+        """
+        Sometimes shopify.Limits.api_credit_limit_param() fails because the X-Shopify-Shop-Api-Call-Limit is lower case
+        Returns:
+
+        """
+        used_credits, max_credits = 1, 1
+        lower_case_ratelimit = shopify.Limits.CREDIT_LIMIT_HEADER_PARAM.lower()
+        header_found = False
+        for key, value in shopify.Limits.response().headers.items():
+            if key.lower() == lower_case_ratelimit:
+                used_credits, max_credits = value.split("/")
+                header_found = True
+                break
+        if not header_found:
+            logging.warning(f"Header {lower_case_ratelimit} was not found in the response!")
+        return used_credits, max_credits
