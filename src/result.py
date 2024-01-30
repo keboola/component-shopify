@@ -204,36 +204,38 @@ class OrderWriter(ResultWriter):
         self.customer_writer = customers_writer
 
     def write(self, data, file_name=None, user_values=None, object_from_arrays=False, write_header=True):
-        # flatten obj
-        order_id = data['id']
-        line_items = data.pop('line_items')
-        self.line_item_writer.write_all(line_items, user_values={"order_id": order_id,
-                                                                 EXTRACTION_TIME: self.extraction_time})
-
-        self.fulfillments_writer.write_all(data.pop('fulfillments', []), user_values={"order_id": order_id,
-                                                                                      EXTRACTION_TIME:
-                                                                                          self.extraction_time})
-
-        for idx, el in enumerate(data.pop('discount_applications')):
-            el[KEY_ROW_NR] = idx
-            self.discount_applications_writer.write(el, user_values={"order_id": order_id,
+        if data:
+            # flatten obj
+            order_id = data['id']
+            line_items = data.pop('line_items')
+            self.line_item_writer.write_all(line_items, user_values={"order_id": order_id,
                                                                      EXTRACTION_TIME: self.extraction_time})
 
-        for idx, el in enumerate(data.pop('discount_codes')):
-            el[KEY_ROW_NR] = idx
-            self.discount_codes_writer.write(el, user_values={"order_id": order_id,
-                                                              EXTRACTION_TIME: self.extraction_time})
+            self.fulfillments_writer.write_all(data.pop('fulfillments', []), user_values={"order_id": order_id,
+                                                                                          EXTRACTION_TIME:
+                                                                                              self.extraction_time})
 
-        for idx, el in enumerate(data.pop('tax_lines')):
-            el[KEY_ROW_NR] = idx
-            self.tax_lines_writer.write(el, user_values={"order_id": order_id,
-                                                         EXTRACTION_TIME: self.extraction_time})
+            for idx, el in enumerate(data.pop('discount_applications')):
+                el[KEY_ROW_NR] = idx
+                self.discount_applications_writer.write(el, user_values={"order_id": order_id,
+                                                                         EXTRACTION_TIME: self.extraction_time})
 
-        customer = data.pop('customer', {})
-        data['customer_id'] = customer.get('id', '')
-        self.customer_writer.write(customer)
+            for idx, el in enumerate(data.pop('discount_codes')):
+                el[KEY_ROW_NR] = idx
+                self.discount_codes_writer.write(el, user_values={"order_id": order_id,
+                                                                  EXTRACTION_TIME: self.extraction_time})
 
-        super().write(data, user_values=user_values)
+            for idx, el in enumerate(data.pop('tax_lines')):
+                el[KEY_ROW_NR] = idx
+                self.tax_lines_writer.write(el, user_values={"order_id": order_id,
+                                                             EXTRACTION_TIME: self.extraction_time})
+
+            customer = data.pop('customer', {})
+            if customer:
+                data['customer_id'] = customer.get('id', '')
+                self.customer_writer.write(customer)
+
+            super().write(data, user_values=user_values)
 
     def collect_results(self):
         results = []
