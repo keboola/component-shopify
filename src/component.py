@@ -115,11 +115,11 @@ class Component(KBCEnvHandler):
         if endpoints.get(KEY_CUSTOMERS):
             # special case, results collected at the end
             logging.info(f'Getting customers since {start_date}')
-            self.download_customers(start_date, end_date, last_state)
+            self.download_customers(start_date, end_date)
 
         if endpoints.get(KEY_EVENTS) and len(endpoints[KEY_EVENTS]) > 0:
             logging.info(f'Getting events since {start_date}')
-            results.extend(self.download_events(endpoints[KEY_EVENTS][0], start_date, end_date, last_state))
+            results.extend(self.download_events(endpoints[KEY_EVENTS][0], start_date, end_date))
 
         # collect customers
         self._customer_writer.close()
@@ -238,7 +238,7 @@ class Component(KBCEnvHandler):
         if buffer:
             yield buffer
 
-    def download_customers(self, start_date, end_date, file_headers):
+    def download_customers(self, start_date, end_date):
         for o in self.client.get_customers(start_date, end_date):
             self._customer_writer.write(o)
 
@@ -248,7 +248,7 @@ class Component(KBCEnvHandler):
             cols = [p.strip() for p in param.split(",")]
         return cols
 
-    def download_events(self, param, start_date, end_date, last_state):
+    def download_events(self, param, start_date, end_date):
         headers = [
             "id",
             "subject_id",
