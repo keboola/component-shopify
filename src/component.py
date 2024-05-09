@@ -21,7 +21,7 @@ KEY_API_TOKEN = '#api_token'
 KEY_SINCE_DATE = 'date_since'
 KEY_TO_DATE = 'date_to'
 KEY_INCREMENTAL_OUTPUT = 'incremental_output'
-KEY_INCREMENTAL_FIELD = 'incremental_field'
+KEY_FETCH_PARAMETER = 'fetch_parameter'
 KEY_LOADING_OPTIONS = 'loading_options'
 
 KEY_ENDPOINTS = 'endpoints'
@@ -98,7 +98,7 @@ class Component(KBCEnvHandler):
         params = self.cfg_params  # noqa
 
         last_state = self.get_state_file()
-        fetch_field = params[KEY_LOADING_OPTIONS].get(KEY_INCREMENTAL_FIELD) or 'updated_at'
+        fetch_parameter = params[KEY_LOADING_OPTIONS].get(KEY_FETCH_PARAMETER) or 'updated_at'
         since = params[KEY_LOADING_OPTIONS].get(KEY_SINCE_DATE) or '2005-01-01'
         until = params[KEY_LOADING_OPTIONS].get(KEY_TO_DATE) or 'now'
 
@@ -108,20 +108,20 @@ class Component(KBCEnvHandler):
 
         if endpoints.get(KEY_ORDERS):
             logging.info(f'Getting orders since {start_date}')
-            results.extend(self.download_orders(fetch_field, start_date, end_date, last_state))
+            results.extend(self.download_orders(fetch_parameter, start_date, end_date, last_state))
 
         if endpoints.get(KEY_PRODUCTS):
             logging.info(f'Getting products since {start_date}')
-            results.extend(self.download_products(fetch_field, start_date, end_date, last_state))
+            results.extend(self.download_products(fetch_parameter, start_date, end_date, last_state))
 
         if endpoints.get(KEY_CUSTOMERS):
             # special case, results collected at the end
             logging.info(f'Getting customers since {start_date}')
-            self.download_customers(fetch_field, start_date, end_date)
+            self.download_customers(fetch_parameter, start_date, end_date)
 
         if endpoints.get(KEY_EVENTS) and len(endpoints[KEY_EVENTS]) > 0:
             logging.info(f'Getting events since {start_date}')
-            results.extend(self.download_events(endpoints[KEY_EVENTS][0], fetch_field, start_date, end_date))
+            results.extend(self.download_events(endpoints[KEY_EVENTS][0], fetch_parameter, start_date, end_date))
 
         # collect customers
         self._customer_writer.close()

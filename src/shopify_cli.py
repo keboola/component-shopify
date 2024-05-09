@@ -153,12 +153,12 @@ class ShopifyResource(Enum):
                 ', '.join(errors) + f'\n Supported Resources are: [{cls.list()}]')
 
 
-def _get_date_param_min(fetch_field: str):
-    return f"{fetch_field}_min"
+def _get_date_param_min(fetch_parameter: str):
+    return f"{fetch_parameter}_min"
 
 
-def _get_date_param_max(fetch_field: str):
-    return f"{fetch_field}_max"
+def _get_date_param_max(fetch_parameter: str):
+    return f"{fetch_parameter}_max"
 
 
 class ShopifyClient:
@@ -169,13 +169,13 @@ class ShopifyClient:
         self.wait_time_seconds = BASE_SLEEP_TIME
         shopify.ShopifyResource.activate_session(self.session)
 
-    def get_orders(self, fetch_field: str, datetime_min: datetime.datetime = None,
+    def get_orders(self, fetch_parameter: str, datetime_min: datetime.datetime = None,
                    datetime_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
                    status='any', fields=None, results_per_page=RESULTS_PER_PAGE):
         """
         Get orders
         Args:
-            fetch_field: Field to fetch
+            fetch_parameter: Field to fetch
             datetime_min:
             datetime_max:
             status:
@@ -195,8 +195,8 @@ class ShopifyClient:
                                           datetime_max=datetime_max,
                                           results_per_page=results_per_page,
                                           status=status,
-                                          datetime_param_min=_get_date_param_min(fetch_field),
-                                          datetime_param_max=_get_date_param_max(fetch_field),
+                                          datetime_param_min=_get_date_param_min(fetch_parameter),
+                                          datetime_param_max=_get_date_param_max(fetch_parameter),
                                           **additional_params)
 
     def get_metafields(self, resource: str, resource_id: str, results_per_page=RESULTS_PER_PAGE):
@@ -206,13 +206,13 @@ class ShopifyClient:
         return self.get_objects_paginated_simple(shopify.Metafield, results_per_page,
                                                  **additional_params)
 
-    def get_products(self, fetch_field: str, datetime_min: datetime.datetime = None,
+    def get_products(self, fetch_parameter: str, datetime_min: datetime.datetime = None,
                      datetime_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
                      status='active', fields=None, results_per_page=RESULTS_PER_PAGE, return_chunk_size=90):
         """
         Get products
         Args:
-            fetch_field: Field to fetch
+            fetch_parameter: Field to fetch
             datetime_min:
             datetime_max:
             status:
@@ -235,8 +235,8 @@ class ShopifyClient:
                                             datetime_max=datetime_max,
                                             results_per_page=results_per_page,
                                             status=status,
-                                            datetime_param_min=_get_date_param_min(fetch_field),
-                                            datetime_param_max=_get_date_param_max(fetch_field),
+                                            datetime_param_min=_get_date_param_min(fetch_parameter),
+                                            datetime_param_max=_get_date_param_max(fetch_parameter),
                                             **additional_params):
             buffered += 1
             buffer.append(p)
@@ -267,7 +267,7 @@ class ShopifyClient:
         return self.get_objects_paginated_simple(shopify.Location,
                                                  results_per_page=results_per_page)
 
-    def get_events(self, fetch_field: str, datetime_min: datetime.datetime = None,
+    def get_events(self, fetch_parameter: str, datetime_min: datetime.datetime = None,
                    datetime_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
                    filter_resource: List[Union[ShopifyResource, str]] = None, event_type: str = None,
                    fields: List[str] = None,
@@ -278,7 +278,7 @@ class ShopifyClient:
         Retrieves a list of events.
 
         Args:
-            fetch_field: Field to fetch
+            fetch_parameter: Field to fetch
             datetime_min:
             datetime_max:
             filter_resource: Filter on certain events by the type of resource it produced. e.g.['Order','Product']
@@ -316,7 +316,7 @@ class ShopifyClient:
                                           results_per_page=results_per_page,
                                           **additional_params)
 
-    def get_customers(self, fetch_field: str, datetime_min: datetime.datetime = None,
+    def get_customers(self, fetch_parameter: str, datetime_min: datetime.datetime = None,
                       datetime_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
                       state=None, fields=None, results_per_page=RESULTS_PER_PAGE):
         additional_params = {}
@@ -330,8 +330,8 @@ class ShopifyClient:
                                           datetime_min=datetime_min,
                                           datetime_max=datetime_max,
                                           results_per_page=results_per_page,
-                                          datetime_param_min=_get_date_param_min(fetch_field),
-                                          datetime_param_max=_get_date_param_max(fetch_field),
+                                          datetime_param_min=_get_date_param_min(fetch_parameter),
+                                          datetime_param_max=_get_date_param_max(fetch_parameter),
                                           **additional_params)
 
     @response_error_handling

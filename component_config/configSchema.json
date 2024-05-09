@@ -171,6 +171,17 @@
           "description": " Date in YYYY-MM-DD format or dateparser string i.e. 5 days ago, 1 month ago, yesterday, etc. If left empty, all records are downloaded.",
           "propertyOrder": 300
         },
+        "fetch_parameter": {
+          "enum": [
+            "updated_at",
+            "created_at"
+          ],
+          "type": "string",
+          "title": "Fetch parameter",
+          "default": "updated_at",
+          "description": "Field/parameter to be used for filtering data from API.",
+          "propertyOrder": 430
+        },
         "incremental_output": {
           "enum": [
             0,
@@ -187,26 +198,6 @@
           },
           "description": "If set to Incremental update, the result tables will be updated based on primary key. Full load overwrites the destination table each time. NOTE: If you wish to remove deleted records, this needs to be set to Full load and the Period from attribute empty.",
           "propertyOrder": 450
-        },
-        "incremental_field": {
-          "enum": [
-            "updated_at",
-            "created_at"
-          ],
-          "type": "string",
-          "title": "Incremental Field",
-          "default": "updated_at",
-          "options": {
-             "dependencies": {
-                "incremental_output": 1
-              },
-            "enum_titles": [
-              "Updated At",
-              "Created At"
-            ]
-          },
-          "description": "Field/column to be used for incremental fetching from API.",
-          "propertyOrder": 460
         }
       },
       "propertyOrder": 400
