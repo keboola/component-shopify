@@ -187,6 +187,26 @@
           },
           "description": "If set to Incremental update, the result tables will be updated based on primary key. Full load overwrites the destination table each time. NOTE: If you wish to remove deleted records, this needs to be set to Full load and the Period from attribute empty.",
           "propertyOrder": 450
+        },
+        "incremental_field": {
+          "enum": [
+            "updated_at",
+            "created_at"
+          ],
+          "type": "string",
+          "title": "Incremental Field",
+          "default": "updated_at",
+          "options": {
+             "dependencies": {
+                "incremental_output": 1
+              },
+            "enum_titles": [
+              "Updated At",
+              "Created At"
+            ]
+          },
+          "description": "Field/column to be used for incremental fetching from API.",
+          "propertyOrder": 460
         }
       },
       "propertyOrder": 400

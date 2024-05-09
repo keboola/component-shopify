@@ -66,7 +66,7 @@ Accepts date in `YYYY-MM-DD` format or dateparser string i.e. `5 days ago`, `1 m
 
 ### Load type
 
-If set to Incremental update, the result tables will be updated based on primary key.
+The result tables will be updated based on the primary key if set to Incremental update. You can specify which date field (`updated_at` or `created_at`) will be used to fetch data
  Full load overwrites the destination table each time.
 
 ## Endpoints
