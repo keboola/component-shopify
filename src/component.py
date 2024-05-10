@@ -21,6 +21,7 @@ KEY_API_TOKEN = '#api_token'
 KEY_SINCE_DATE = 'date_since'
 KEY_TO_DATE = 'date_to'
 KEY_INCREMENTAL_OUTPUT = 'incremental_output'
+KEY_FETCH_PARAMETER = 'fetch_parameter'
 KEY_LOADING_OPTIONS = 'loading_options'
 
 KEY_ENDPOINTS = 'endpoints'
@@ -97,6 +98,7 @@ class Component(KBCEnvHandler):
         params = self.cfg_params  # noqa
 
         last_state = self.get_state_file()
+        fetch_parameter = params[KEY_LOADING_OPTIONS].get(KEY_FETCH_PARAMETER) or 'updated_at'
         since = params[KEY_LOADING_OPTIONS].get(KEY_SINCE_DATE) or '2005-01-01'
         until = params[KEY_LOADING_OPTIONS].get(KEY_TO_DATE) or 'now'
 
@@ -106,20 +108,20 @@ class Component(KBCEnvHandler):
 
         if endpoints.get(KEY_ORDERS):
             logging.info(f'Getting orders since {start_date}')
-            results.extend(self.download_orders(start_date, end_date, last_state))
+            results.extend(self.download_orders(fetch_parameter, start_date, end_date, last_state))
 
         if endpoints.get(KEY_PRODUCTS):
             logging.info(f'Getting products since {start_date}')
-            results.extend(self.download_products(start_date, end_date, last_state))
+            results.extend(self.download_products(fetch_parameter, start_date, end_date, last_state))
 
         if endpoints.get(KEY_CUSTOMERS):
             # special case, results collected at the end
             logging.info(f'Getting customers since {start_date}')
-            self.download_customers(start_date, end_date, last_state)
+            self.download_customers(fetch_parameter, start_date, end_date)
 
         if endpoints.get(KEY_EVENTS) and len(endpoints[KEY_EVENTS]) > 0:
             logging.info(f'Getting events since {start_date}')
-            results.extend(self.download_events(endpoints[KEY_EVENTS][0], start_date, end_date, last_state))
+            results.extend(self.download_events(endpoints[KEY_EVENTS][0], fetch_parameter, start_date, end_date))
 
         # collect customers
         self._customer_writer.close()
@@ -138,17 +140,17 @@ class Component(KBCEnvHandler):
         incremental = params[KEY_LOADING_OPTIONS].get(KEY_INCREMENTAL_OUTPUT, False)
         self.create_manifests(results, incremental=incremental)
 
-    def download_orders(self, start_date, end_date, file_headers):
+    def download_orders(self, fetch_field, start_date, end_date, file_headers):
         with OrderWriter(self.tables_out_path, 'order', extraction_time=self.extraction_time,
                          customers_writer=self._customer_writer,
                          file_headers=file_headers) as writer:
-            for o in self.client.get_orders(start_date, end_date):
+            for o in self.client.get_orders(fetch_field, start_date, end_date):
                 writer.write(o)
 
         results = writer.collect_results()
         return results
 
-    def download_products(self, start_date, end_date, file_headers):
+    def download_products(self, fetch_field, start_date, end_date, file_headers):
         inventory_writer = ResultWriter(self.tables_out_path,
                                         KBCTableDef(name='inventory_items', pk=['id'],
                                                     columns=[],
@@ -166,7 +168,7 @@ class Component(KBCEnvHandler):
         with ProductsWriter(self.tables_out_path, 'product',
                             extraction_time=self.extraction_time,
                             file_headers=file_headers) as writer:
-            for o in self.client.get_products(start_date, end_date):
+            for o in self.client.get_products(fetch_field, start_date, end_date):
                 variants = [p['variants'] for p in o]
                 inventory_ids = [str(v['inventory_item_id']) for sublist in variants for v in sublist]
                 writer.write_all(o)
@@ -216,39 +218,11 @@ class Component(KBCEnvHandler):
             for item in self.client.get_inventory_item_levels(chunk):
                 writer.write(item)
 
-    def _split_array_to_chunks(self, items: list, chunk_size: int):
-        """
-        Helper method to split items into chunks of specified size
-        Args:
-            items:
-            chunk_size:
-
-        Returns:
-
-        """
-        buffered = 0
-        buffer = []
-        for p in items:
-            buffered += 1
-            buffer.append(p)
-            if buffered >= chunk_size:
-                results = buffer.copy()
-                buffer = []
-                yield results
-        if buffer:
-            yield buffer
-
-    def download_customers(self, start_date, end_date, file_headers):
-        for o in self.client.get_customers(start_date, end_date):
+    def download_customers(self, fetch_field, start_date, end_date):
+        for o in self.client.get_customers(fetch_field, start_date, end_date):
             self._customer_writer.write(o)
 
-    def parse_comma_separated_values(self, param) -> List[str]:
-        cols = []
-        if param:
-            cols = [p.strip() for p in param.split(",")]
-        return cols
-
-    def download_events(self, param, start_date, end_date, last_state):
+    def download_events(self, param, fetch_field, start_date, end_date):
         headers = [
             "id",
             "subject_id",
@@ -275,11 +249,42 @@ class Component(KBCEnvHandler):
             if not types:
                 types = [None]
             for t in types:
-                for o in self.client.get_events(start_date, end_date, filter_resource=filters, event_type=t):
+                for o in self.client.get_events(fetch_field, start_date, end_date, filter_resource=filters,
+                                                event_type=t):
                     writer.write(o)
 
         results = writer.collect_results()
         return results
+
+    @staticmethod
+    def _split_array_to_chunks(items: list, chunk_size: int):
+        """
+        Helper method to split items into chunks of specified size
+        Args:
+            items:
+            chunk_size:
+
+        Returns:
+
+        """
+        buffered = 0
+        buffer = []
+        for p in items:
+            buffered += 1
+            buffer.append(p)
+            if buffered >= chunk_size:
+                results = buffer.copy()
+                buffer = []
+                yield results
+        if buffer:
+            yield buffer
+
+    @staticmethod
+    def parse_comma_separated_values(param) -> List[str]:
+        cols = []
+        if param:
+            cols = [p.strip() for p in param.split(",")]
+        return cols
 
     @staticmethod
     def validate_api_token(token):

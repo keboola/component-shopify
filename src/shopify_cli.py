@@ -153,6 +153,14 @@ class ShopifyResource(Enum):
                 ', '.join(errors) + f'\n Supported Resources are: [{cls.list()}]')
 
 
+def _get_date_param_min(fetch_parameter: str):
+    return f"{fetch_parameter}_min"
+
+
+def _get_date_param_max(fetch_parameter: str):
+    return f"{fetch_parameter}_max"
+
+
 class ShopifyClient:
 
     def __init__(self, shop: str, access_token: str, api_version: str = '2022-10'):
@@ -161,19 +169,34 @@ class ShopifyClient:
         self.wait_time_seconds = BASE_SLEEP_TIME
         shopify.ShopifyResource.activate_session(self.session)
 
-    def get_orders(self, updated_at_min: datetime.datetime = None,
-                   updated_at_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
+    def get_orders(self, fetch_parameter: str, datetime_min: datetime.datetime = None,
+                   datetime_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
                    status='any', fields=None, results_per_page=RESULTS_PER_PAGE):
+        """
+        Get orders
+        Args:
+            fetch_parameter: Field to fetch
+            datetime_min:
+            datetime_max:
+            status:
+            fields:
+            results_per_page:
+
+        Returns: Generator object, list of orders
+
+        """
 
         additional_params = {}
         if fields:
             additional_params['fields'] = fields
 
         return self.get_objects_paginated(shopify.Order,
-                                          updated_at_min=updated_at_min,
-                                          updated_at_max=updated_at_max,
+                                          datetime_min=datetime_min,
+                                          datetime_max=datetime_max,
                                           results_per_page=results_per_page,
                                           status=status,
+                                          datetime_param_min=_get_date_param_min(fetch_parameter),
+                                          datetime_param_max=_get_date_param_max(fetch_parameter),
                                           **additional_params)
 
     def get_metafields(self, resource: str, resource_id: str, results_per_page=RESULTS_PER_PAGE):
@@ -183,14 +206,15 @@ class ShopifyClient:
         return self.get_objects_paginated_simple(shopify.Metafield, results_per_page,
                                                  **additional_params)
 
-    def get_products(self, updated_at_min: datetime.datetime = None,
-                     updated_at_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
+    def get_products(self, fetch_parameter: str, datetime_min: datetime.datetime = None,
+                     datetime_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
                      status='active', fields=None, results_per_page=RESULTS_PER_PAGE, return_chunk_size=90):
         """
         Get products
         Args:
-            updated_at_min:
-            updated_at_max:
+            fetch_parameter: Field to fetch
+            datetime_min:
+            datetime_max:
             status:
             fields:
             results_per_page:
@@ -207,10 +231,12 @@ class ShopifyClient:
         buffered = 0
         buffer = []
         for p in self.get_objects_paginated(shopify.Product,
-                                            updated_at_min=updated_at_min,
-                                            updated_at_max=updated_at_max,
+                                            datetime_min=datetime_min,
+                                            datetime_max=datetime_max,
                                             results_per_page=results_per_page,
                                             status=status,
+                                            datetime_param_min=_get_date_param_min(fetch_parameter),
+                                            datetime_param_max=_get_date_param_max(fetch_parameter),
                                             **additional_params):
             buffered += 1
             buffer.append(p)
@@ -223,8 +249,7 @@ class ShopifyClient:
     def get_inventory_items(self, inventory_ids: list,
                             results_per_page=RESULTS_PER_PAGE):
 
-        additional_params = {}
-        additional_params['ids'] = ','.join(inventory_ids)
+        additional_params = {'ids': ','.join(inventory_ids)}
         return self.get_objects_paginated_simple(shopify.InventoryItem,
                                                  results_per_page=results_per_page,
                                                  **additional_params)
@@ -232,8 +257,7 @@ class ShopifyClient:
     def get_inventory_item_levels(self, inventory_ids: list,
                                   results_per_page=RESULTS_PER_PAGE):
 
-        additional_params = {}
-        additional_params['inventory_item_ids'] = ','.join(inventory_ids)
+        additional_params = {'inventory_item_ids': ','.join(inventory_ids)}
         return self.get_objects_paginated_simple(shopify.InventoryLevel,
                                                  results_per_page=results_per_page,
                                                  **additional_params)
@@ -243,20 +267,20 @@ class ShopifyClient:
         return self.get_objects_paginated_simple(shopify.Location,
                                                  results_per_page=results_per_page)
 
-    def get_events(self, updated_at_min: datetime.datetime = None,
-                   updated_at_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
+    def get_events(self, fetch_parameter: str, datetime_min: datetime.datetime = None,
+                   datetime_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
                    filter_resource: List[Union[ShopifyResource, str]] = None, event_type: str = None,
                    fields: List[str] = None,
                    results_per_page: int = RESULTS_PER_PAGE
-
                    ):
 
         """
         Retrieves a list of events.
 
         Args:
-            updated_at_min:
-            updated_at_max:
+            fetch_parameter: Field to fetch
+            datetime_min:
+            datetime_max:
             filter_resource: Filter on certain events by the type of resource it produced. e.g.['Order','Product']
             event_type:
                 eg 'confirmed', 'create', 'destroy' The type of event that occurred. Different resources generate
@@ -285,15 +309,15 @@ class ShopifyClient:
             additional_params['fields'] = fields
 
         return self.get_objects_paginated(shopify.Event,
-                                          updated_at_min=updated_at_min,
-                                          updated_at_max=updated_at_max,
-                                          date_start_par='created_at_min',
-                                          date_end_par='created_at_max',
+                                          datetime_min=datetime_min,
+                                          datetime_max=datetime_max,
+                                          datetime_param_min='created_at_min',
+                                          datetime_param_max='created_at_max',
                                           results_per_page=results_per_page,
                                           **additional_params)
 
-    def get_customers(self, updated_at_min: datetime.datetime = None,
-                      updated_at_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
+    def get_customers(self, fetch_parameter: str, datetime_min: datetime.datetime = None,
+                      datetime_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
                       state=None, fields=None, results_per_page=RESULTS_PER_PAGE):
         additional_params = {}
         if fields:
@@ -303,9 +327,11 @@ class ShopifyClient:
             additional_params['state'] = state
 
         return self.get_objects_paginated(shopify.Customer,
-                                          updated_at_min=updated_at_min,
-                                          updated_at_max=updated_at_max,
+                                          datetime_min=datetime_min,
+                                          datetime_max=datetime_max,
                                           results_per_page=results_per_page,
+                                          datetime_param_min=_get_date_param_min(fetch_parameter),
+                                          datetime_param_max=_get_date_param_max(fetch_parameter),
                                           **additional_params)
 
     @response_error_handling
@@ -331,37 +357,39 @@ class ShopifyClient:
                 yield obj.to_dict()
 
     def get_objects_paginated(self, shopify_object: Type[shopify.ShopifyResource],
-                              updated_at_min: datetime.datetime = None,
-                              updated_at_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
+                              datetime_min: datetime.datetime = None,
+                              datetime_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
                               date_window_size: int = DATE_WINDOW_SIZE,
                               results_per_page=RESULTS_PER_PAGE,
-                              date_start_par='updated_at_min',
-                              date_end_par='updated_at_max',
+                              datetime_param_min='updated_at_min',
+                              datetime_param_max='updated_at_max',
                               **kwargs):
         """
         Get all objects and paginate per date. The pagination is also limited by the ``date_window_size`` parameter,
         that prevents overloading the API and getting too many 500s.
         Args:
             shopify_object (Type[shopify.ShopifyResource]): Shopify object to retrieve.
-            updated_at_min (datetime): Min date
-            updated_at_max (datetime): Max date
-            date_window_size: Size of the window to get in each request (days
+            datetime_min (datetime): Min date
+            datetime_max (datetime): Max date
+            date_window_size: Size of the window to get in each request days
             results_per_page:
+            datetime_param_min: field date min parameter
+            datetime_param_max: field date max parameter
             **kwargs:
 
         Yields:
             Array of objects as dict
 
         """
-        updated_at_min = updated_at_min.replace(microsecond=0)
+        datetime_min = datetime_min.replace(microsecond=0)
 
-        stop_time = updated_at_max
+        stop_time = datetime_max
 
         # Page through till the end of the result set
         # NOTE: "Artificial" pagination done in Singer Tap, keeping it since it apparently causes 500 errors
         # when requesting full period. Eg. paging per window_size (1day)
         # however it was simplified to leverage shopify native pagination function
-        while updated_at_min < stop_time:
+        while datetime_min < stop_time:
 
             # ## Original Singer Tap comment
             # It's important that `updated_at_min` has microseconds
@@ -369,13 +397,13 @@ class ShopifyClient:
             # think it has something to do with how the API treats
             # microseconds on its date windows. Maybe it's possible to
             # drop data due to rounding errors or something like that?
-            updated_at_max = updated_at_min + datetime.timedelta(days=date_window_size)
-            if updated_at_max > stop_time:
-                updated_at_max = stop_time
+            datetime_max = datetime_min + datetime.timedelta(days=date_window_size)
+            if datetime_max > stop_time:
+                datetime_max = stop_time
 
             query_params = {**{
-                date_start_par: updated_at_min.isoformat(),
-                date_end_par: updated_at_max.isoformat(),
+                datetime_param_min: datetime_min.isoformat(),
+                datetime_param_max: datetime_max.isoformat(),
                 "limit": results_per_page
             }, **kwargs}
 
@@ -387,7 +415,7 @@ class ShopifyClient:
                 for obj in collection:
                     yield obj.to_dict()
 
-            updated_at_min = updated_at_max
+            datetime_min = datetime_max
 
     def check_api_limit_use(self):
         used_credits, max_credits = self._try_get_credits()
