@@ -199,6 +199,21 @@ class ShopifyClient:
                                           datetime_param_max=_get_date_param_max(fetch_parameter),
                                           **additional_params)
 
+    def get_transactions(self, order_id: str, results_per_page=RESULTS_PER_PAGE):
+        """
+        Get orders
+        Args:
+            order_id: Order ID
+
+        Returns: Generator object, list of orders
+
+        """
+
+        additional_params = {'order_id': order_id}
+
+        return self.get_objects_paginated_simple(shopify.Transaction, results_per_page=results_per_page,
+                                                 **additional_params)
+
     def get_metafields(self, resource: str, resource_id: str, results_per_page=RESULTS_PER_PAGE):
 
         additional_params = {'resource': resource, 'resource_id': resource_id}

@@ -143,11 +143,22 @@ class Component(KBCEnvHandler):
     def download_orders(self, fetch_field, start_date, end_date, file_headers):
         with OrderWriter(self.tables_out_path, 'order', extraction_time=self.extraction_time,
                          customers_writer=self._customer_writer,
-                         file_headers=file_headers) as writer:
+                         file_headers=file_headers) as writer_orders, \
+             ResultWriter(self.tables_out_path,
+                          KBCTableDef(name='transactions',
+                                      pk=['order_id', 'id'],
+                                      columns=[],
+                                      destination=''),
+                          flatten_objects=True, child_separator='__') as writer_transactions:
             for o in self.client.get_orders(fetch_field, start_date, end_date):
-                writer.write(o)
+                writer_orders.write(o)
 
-        results = writer.collect_results()
+                if self.cfg_params[KEY_ENDPOINTS].get('transactions'):
+                    self.download_transactions(writer_transactions, o['id'])
+
+        results = writer_orders.collect_results()
+        results.extend(writer_transactions.collect_results())
+
         return results
 
     def download_products(self, fetch_field, start_date, end_date, file_headers):
@@ -221,6 +232,10 @@ class Component(KBCEnvHandler):
     def download_customers(self, fetch_field, start_date, end_date):
         for o in self.client.get_customers(fetch_field, start_date, end_date):
             self._customer_writer.write(o)
+
+    def download_transactions(self, writer, order_id):
+        for transaction in self.client.get_transactions(order_id):
+            writer.write(transaction)
 
     def download_events(self, param, fetch_field, start_date, end_date):
         headers = [
