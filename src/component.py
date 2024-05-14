@@ -149,7 +149,7 @@ class Component(KBCEnvHandler):
                                       pk=['order_id', 'id'],
                                       columns=[],
                                       destination=''),
-                          flatten_objects=True, child_separator='__') as writer_transactions:
+                          flatten_objects=False, child_separator='__') as writer_transactions:
             for o in self.client.get_orders(fetch_field, start_date, end_date):
                 writer_orders.write(o)
 
