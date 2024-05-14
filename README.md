@@ -92,6 +92,10 @@ their primary foreign/primary keys:
 
 ### Orders
 
+### Transactions
+
+Download transactions related to Orders.
+
 ### Customers
 
 ### Events

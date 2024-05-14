@@ -135,6 +135,19 @@
           },
           "description": "Get metafields related to product variants",
           "propertyOrder": 43
+        },
+        "transactions": {
+          "type": "boolean",
+          "title": "Transactions",
+          "format": "checkbox",
+          "default": false,
+          "options": {
+            "dependencies": {
+              "orders": true
+            }
+          },
+          "description": "Get transaction for orders",
+          "propertyOrder": 43
         }
       },
       "propertyOrder": 500
