@@ -150,11 +150,16 @@ class Component(KBCEnvHandler):
                                       columns=[],
                                       destination=''),
                           flatten_objects=False, child_separator='__') as writer_transactions:
+            orders_processed = 0
             for o in self.client.get_orders(fetch_field, start_date, end_date):
                 writer_orders.write(o)
+                orders_processed += 1
 
                 if self.cfg_params[KEY_ENDPOINTS].get('transactions'):
                     self.download_transactions(writer_transactions, o['id'])
+
+                if orders_processed % 1000 == 0:
+                    logging.info(f"Downloading records: {orders_processed} - {orders_processed+1000}")
 
         results = writer_orders.collect_results()
         results.extend(writer_transactions.collect_results())
