@@ -150,8 +150,7 @@ class Component(KBCEnvHandler):
         if KEY_PRODUCTS_DRAFTS in self.cfg_params[KEY_ENDPOINTS]:
             if self.cfg_params[KEY_ENDPOINTS][KEY_PRODUCTS_ARCHIVED]:
                 status.append('draft')
-        print(','.join(status))
-        return status
+        return ','.join(status)
 
     def download_orders(self, fetch_field, start_date, end_date, file_headers):
         with OrderWriter(self.tables_out_path, 'order', extraction_time=self.extraction_time,
