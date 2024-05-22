@@ -27,6 +27,8 @@ KEY_LOADING_OPTIONS = 'loading_options'
 KEY_ENDPOINTS = 'endpoints'
 KEY_ORDERS = 'orders'
 KEY_PRODUCTS = 'products'
+KEY_PRODUCTS_ARCHIVED = 'products_archived'
+KEY_PRODUCTS_DRAFTS = 'products_drafts'
 KEY_CUSTOMERS = 'customers'
 KEY_EVENTS = 'events'
 KEY_INVENTORY = 'inventory'
@@ -107,20 +109,20 @@ class Component(KBCEnvHandler):
         endpoints = params[KEY_ENDPOINTS]
 
         if endpoints.get(KEY_ORDERS):
-            logging.info(f'Getting orders since {start_date}')
+            logging.info(f'Getting orders since {start_date} to {end_date}')
             results.extend(self.download_orders(fetch_parameter, start_date, end_date, last_state))
 
         if endpoints.get(KEY_PRODUCTS):
-            logging.info(f'Getting products since {start_date}')
+            logging.info(f'Getting products since {start_date} to {end_date}')
             results.extend(self.download_products(fetch_parameter, start_date, end_date, last_state))
 
         if endpoints.get(KEY_CUSTOMERS):
             # special case, results collected at the end
-            logging.info(f'Getting customers since {start_date}')
+            logging.info(f'Getting customers since {start_date} to {end_date}')
             self.download_customers(fetch_parameter, start_date, end_date)
 
         if endpoints.get(KEY_EVENTS) and len(endpoints[KEY_EVENTS]) > 0:
-            logging.info(f'Getting events since {start_date}')
+            logging.info(f'Getting events since {start_date} to {end_date}')
             results.extend(self.download_events(endpoints[KEY_EVENTS][0], fetch_parameter, start_date, end_date))
 
         # collect customers
@@ -140,16 +142,26 @@ class Component(KBCEnvHandler):
         incremental = params[KEY_LOADING_OPTIONS].get(KEY_INCREMENTAL_OUTPUT, False)
         self.create_manifests(results, incremental=incremental)
 
+    def get_product_status(self):
+        status = ['active']
+        if KEY_PRODUCTS_ARCHIVED in self.cfg_params[KEY_ENDPOINTS]:
+            if self.cfg_params[KEY_ENDPOINTS][KEY_PRODUCTS_ARCHIVED]:
+                status.append('archived')
+        if KEY_PRODUCTS_DRAFTS in self.cfg_params[KEY_ENDPOINTS]:
+            if self.cfg_params[KEY_ENDPOINTS][KEY_PRODUCTS_ARCHIVED]:
+                status.append('draft')
+        return ','.join(status)
+
     def download_orders(self, fetch_field, start_date, end_date, file_headers):
         with OrderWriter(self.tables_out_path, 'order', extraction_time=self.extraction_time,
                          customers_writer=self._customer_writer,
                          file_headers=file_headers) as writer_orders, \
-             ResultWriter(self.tables_out_path,
-                          KBCTableDef(name='transactions',
-                                      pk=['order_id', 'id'],
-                                      columns=[],
-                                      destination=''),
-                          flatten_objects=False, child_separator='__') as writer_transactions:
+                ResultWriter(self.tables_out_path,
+                             KBCTableDef(name='transactions',
+                                         pk=['order_id', 'id'],
+                                         columns=[],
+                                         destination=''),
+                             flatten_objects=False, child_separator='__') as writer_transactions:
             orders_processed = 0
             for o in self.client.get_orders(fetch_field, start_date, end_date):
                 writer_orders.write(o)
@@ -159,7 +171,7 @@ class Component(KBCEnvHandler):
                     self.download_transactions(writer_transactions, o['id'])
 
                 if orders_processed % 1000 == 0:
-                    logging.info(f"Downloading records: {orders_processed} - {orders_processed+1000}")
+                    logging.info(f"Downloading records: {orders_processed} - {orders_processed + 1000}")
 
         results = writer_orders.collect_results()
         results.extend(writer_transactions.collect_results())
@@ -184,7 +196,7 @@ class Component(KBCEnvHandler):
         with ProductsWriter(self.tables_out_path, 'product',
                             extraction_time=self.extraction_time,
                             file_headers=file_headers) as writer:
-            for o in self.client.get_products(fetch_field, start_date, end_date):
+            for o in self.client.get_products(fetch_field, start_date, end_date, self.get_product_status()):
                 variants = [p['variants'] for p in o]
                 inventory_ids = [str(v['inventory_item_id']) for sublist in variants for v in sublist]
                 writer.write_all(o)

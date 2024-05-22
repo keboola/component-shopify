@@ -90,29 +90,35 @@
           "default": true,
           "propertyOrder": 40
         },
-        "customers": {
+        "products_archived": {
           "type": "boolean",
-          "title": "Customers",
+          "title": "Archived",
           "format": "checkbox",
-          "default": true,
-          "propertyOrder": 45
-        },
-        "inventory": {
-          "type": "boolean",
-          "title": "Inventory",
-          "format": "checkbox",
-          "default": true,
+          "default": false,
           "options": {
             "dependencies": {
               "products": true
             }
           },
-          "description": "Get inventory levels and locations related to products",
+          "description": "Get archived products",
           "propertyOrder": 41
+        },
+        "products_drafts": {
+          "type": "boolean",
+          "title": "Drafts",
+          "format": "checkbox",
+          "default": false,
+          "options": {
+            "dependencies": {
+              "products": true
+            }
+          },
+          "description": "Get drafts of products",
+          "propertyOrder": 42
         },
         "product_metafields": {
           "type": "boolean",
-          "title": "Product Metafields",
+          "title": "Metafields",
           "format": "checkbox",
           "default": false,
           "options": {
@@ -121,7 +127,7 @@
             }
           },
           "description": "Get metafields related to products",
-          "propertyOrder": 42
+          "propertyOrder": 43
         },
         "variant_metafields": {
           "type": "boolean",
@@ -134,7 +140,20 @@
             }
           },
           "description": "Get metafields related to product variants",
-          "propertyOrder": 43
+          "propertyOrder": 44
+        },
+        "inventory": {
+          "type": "boolean",
+          "title": "Product - Inventory",
+          "format": "checkbox",
+          "default": true,
+          "options": {
+            "dependencies": {
+              "products": true
+            }
+          },
+          "description": "Get inventory levels and locations related to products",
+          "propertyOrder": 45
         },
         "transactions": {
           "type": "boolean",
@@ -149,6 +168,13 @@
           "description": "Get transaction for orders",
           "propertyOrder": 43
         }
+      },
+      "customers": {
+        "type": "boolean",
+        "title": "Customers",
+        "format": "checkbox",
+        "default": true,
+        "propertyOrder": 46
       },
       "propertyOrder": 500
     },
