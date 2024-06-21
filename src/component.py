@@ -159,7 +159,7 @@ class Component(KBCEnvHandler):
                 ResultWriter(self.tables_out_path,
                              KBCTableDef(name='transactions',
                                          pk=['order_id', 'id'],
-                                         columns=[],
+                                         columns=file_headers.get('transactions.csv', []),
                                          destination=''),
                              flatten_objects=False, child_separator='__') as writer_transactions:
             orders_processed = 0
