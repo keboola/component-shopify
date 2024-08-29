@@ -133,12 +133,11 @@ class Component(KBCEnvHandler):
         self._metafields_writer.close()
         results.extend(self._metafields_writer.collect_results())
 
-        # get current columns and store in state
-        headers = {}
+        # update column names in statefile
         for r in results:
             file_name = os.path.basename(r.full_path)
-            headers[file_name] = r.table_def.columns
-        self.write_state_file(headers)
+            last_state[file_name] = r.table_def.columns
+        self.write_state_file(last_state)
         incremental = params[KEY_LOADING_OPTIONS].get(KEY_INCREMENTAL_OUTPUT, False)
         self.create_manifests(results, incremental=incremental)
 
