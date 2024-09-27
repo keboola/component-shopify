@@ -102,9 +102,6 @@ class Component(KBCEnvHandler):
         params = self.cfg_params  # noqa
 
         last_state = self.get_state_file()
-        logging.debug(f"Last state: {last_state}")
-        last_state = last_state.get(KEY_STATE_FILE_BASE, {})
-        logging.debug(f"Updated state: {last_state}")
 
         fetch_parameter = params[KEY_LOADING_OPTIONS].get(KEY_FETCH_PARAMETER) or 'updated_at'
         since = params[KEY_LOADING_OPTIONS].get(KEY_SINCE_DATE) or '2005-01-01'
