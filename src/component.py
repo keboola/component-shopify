@@ -139,7 +139,7 @@ class Component(KBCEnvHandler):
         for r in results:
             file_name = os.path.basename(r.full_path)
             last_state[file_name] = r.table_def.columns
-        self.write_state_file({KEY_STATE_FILE_BASE: last_state})
+        self.write_state_file(last_state)
         incremental = params[KEY_LOADING_OPTIONS].get(KEY_INCREMENTAL_OUTPUT, False)
         self.create_manifests(results, incremental=incremental)
 
