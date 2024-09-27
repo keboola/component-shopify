@@ -38,6 +38,8 @@ KEY_SHOP = 'shop'
 # #### Keep for debug
 KEY_DEBUG = 'debug'
 
+KEY_STATE_FILE_BASE = 'component'
+
 # list of mandatory parameters => if some is missing, component will fail with readable message on initialization.
 MANDATORY_PARS = [KEY_API_TOKEN, KEY_SHOP, KEY_LOADING_OPTIONS, KEY_ENDPOINTS]
 MANDATORY_IMAGE_PARS = []
@@ -99,7 +101,7 @@ class Component(KBCEnvHandler):
         '''
         params = self.cfg_params  # noqa
 
-        last_state = self.get_state_file()
+        last_state = self.get_state_file().get(KEY_STATE_FILE_BASE, {})
         fetch_parameter = params[KEY_LOADING_OPTIONS].get(KEY_FETCH_PARAMETER) or 'updated_at'
         since = params[KEY_LOADING_OPTIONS].get(KEY_SINCE_DATE) or '2005-01-01'
         until = params[KEY_LOADING_OPTIONS].get(KEY_TO_DATE) or 'now'
@@ -137,7 +139,7 @@ class Component(KBCEnvHandler):
         for r in results:
             file_name = os.path.basename(r.full_path)
             last_state[file_name] = r.table_def.columns
-        self.write_state_file(last_state)
+        self.write_state_file({KEY_STATE_FILE_BASE: last_state})
         incremental = params[KEY_LOADING_OPTIONS].get(KEY_INCREMENTAL_OUTPUT, False)
         self.create_manifests(results, incremental=incremental)
 
@@ -152,13 +154,14 @@ class Component(KBCEnvHandler):
         return ','.join(status)
 
     def download_orders(self, fetch_field, start_date, end_date, file_headers):
+        transaction_headers = file_headers.get('transactions.csv', [])
         with OrderWriter(self.tables_out_path, 'order', extraction_time=self.extraction_time,
                          customers_writer=self._customer_writer,
                          file_headers=file_headers) as writer_orders, \
                 ResultWriter(self.tables_out_path,
                              KBCTableDef(name='transactions',
                                          pk=['order_id', 'id'],
-                                         columns=file_headers.get('transactions.csv', []),
+                                         columns=transaction_headers,
                                          destination=''),
                              flatten_objects=False, child_separator='__') as writer_transactions:
             orders_processed = 0
