@@ -166,7 +166,7 @@ class Component(KBCEnvHandler):
                              KBCTableDef(name='transactions',
                                          pk=['order_id', 'id'],
                                          columns=transaction_headers,
-                                         destination=''),
+                                         destination=''), fix_headers=True,
                              flatten_objects=False, child_separator='__') as writer_transactions:
             orders_processed = 0
             for o in self.client.get_orders(fetch_field, start_date, end_date):
