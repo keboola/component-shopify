@@ -38,8 +38,6 @@ KEY_SHOP = 'shop'
 # #### Keep for debug
 KEY_DEBUG = 'debug'
 
-KEY_STATE_FILE_BASE = 'component'
-
 # list of mandatory parameters => if some is missing, component will fail with readable message on initialization.
 MANDATORY_PARS = [KEY_API_TOKEN, KEY_SHOP, KEY_LOADING_OPTIONS, KEY_ENDPOINTS]
 MANDATORY_IMAGE_PARS = []
@@ -102,7 +100,6 @@ class Component(KBCEnvHandler):
         params = self.cfg_params  # noqa
 
         last_state = self.get_state_file()
-
         fetch_parameter = params[KEY_LOADING_OPTIONS].get(KEY_FETCH_PARAMETER) or 'updated_at'
         since = params[KEY_LOADING_OPTIONS].get(KEY_SINCE_DATE) or '2005-01-01'
         until = params[KEY_LOADING_OPTIONS].get(KEY_TO_DATE) or 'now'
