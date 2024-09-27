@@ -139,9 +139,7 @@ class Component(KBCEnvHandler):
         # update column names in statefile
         for r in results:
             file_name = os.path.basename(r.full_path)
-            logging.debug(
-                f"Columns in {file_name}: {r.table_def.columns} and from state file: {last_state.get(file_name, [])}")
-            last_state[file_name] = list(set(r.table_def.columns).union(set(last_state.get(file_name, []))))
+            last_state[file_name] = r.table_def.columns
         self.write_state_file(last_state)
         incremental = params[KEY_LOADING_OPTIONS].get(KEY_INCREMENTAL_OUTPUT, False)
         self.create_manifests(results, incremental=incremental)
@@ -157,15 +155,13 @@ class Component(KBCEnvHandler):
         return ','.join(status)
 
     def download_orders(self, fetch_field, start_date, end_date, file_headers):
-        transaction_headers = file_headers.get('transactions.csv', [])
-        logging.debug(f"Transaction headers from state file: {transaction_headers}")
         with OrderWriter(self.tables_out_path, 'order', extraction_time=self.extraction_time,
                          customers_writer=self._customer_writer,
                          file_headers=file_headers) as writer_orders, \
                 ResultWriter(self.tables_out_path,
                              KBCTableDef(name='transactions',
                                          pk=['order_id', 'id'],
-                                         columns=transaction_headers,
+                                         columns=file_headers.get('transactions.csv', []),
                                          destination=''), fix_headers=True,
                              flatten_objects=False, child_separator='__') as writer_transactions:
             orders_processed = 0
@@ -195,6 +191,7 @@ class Component(KBCEnvHandler):
                                                           pk=['inventory_item_id', 'location_id'],
                                                           columns=[],
                                                           destination=''),
+                                              fix_headers=True,
                                               flatten_objects=True, child_separator='__')
         if self.cfg_params[KEY_ENDPOINTS].get(KEY_INVENTORY):
             logging.info('Getting inventory levels and locations for products')
