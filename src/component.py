@@ -138,6 +138,8 @@ class Component(KBCEnvHandler):
         # update column names in statefile
         for r in results:
             file_name = os.path.basename(r.full_path)
+            logging.debug(
+                f"Columns in {file_name}: {r.table_def.columns} and from state file: {last_state.get(file_name, [])}")
             last_state[file_name] = list(set(r.table_def.columns).union(set(last_state.get(file_name, []))))
         self.write_state_file(last_state)
         incremental = params[KEY_LOADING_OPTIONS].get(KEY_INCREMENTAL_OUTPUT, False)
@@ -155,6 +157,7 @@ class Component(KBCEnvHandler):
 
     def download_orders(self, fetch_field, start_date, end_date, file_headers):
         transaction_headers = file_headers.get('transactions.csv', [])
+        logging.debug(f"Transaction headers from state file: {transaction_headers}")
         with OrderWriter(self.tables_out_path, 'order', extraction_time=self.extraction_time,
                          customers_writer=self._customer_writer,
                          file_headers=file_headers) as writer_orders, \
