@@ -159,7 +159,7 @@ class Component(KBCEnvHandler):
                              KBCTableDef(name='transactions',
                                          pk=['order_id', 'id'],
                                          columns=file_headers.get('transactions.csv', []),
-                                         destination=''),
+                                         destination=''), fix_headers=True,
                              flatten_objects=False, child_separator='__') as writer_transactions:
             orders_processed = 0
             for o in self.client.get_orders(fetch_field, start_date, end_date):
@@ -188,6 +188,7 @@ class Component(KBCEnvHandler):
                                                           pk=['inventory_item_id', 'location_id'],
                                                           columns=[],
                                                           destination=''),
+                                              fix_headers=True,
                                               flatten_objects=True, child_separator='__')
         if self.cfg_params[KEY_ENDPOINTS].get(KEY_INVENTORY):
             logging.info('Getting inventory levels and locations for products')
