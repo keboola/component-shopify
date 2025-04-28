@@ -147,5 +147,13 @@ docker-compose run --rm test
 
 # Integration
 
+# SSL verifying turnoff for development
+in shopify_cli.py add following lines to the top of the script
+```
+import ssl
+# Add this at the top of your script
+ssl._create_default_https_context = ssl._create_unverified_context
+```
+
 For information about deployment and integration with KBC, please refer to
 the [deployment section of developers documentation](https://developers.keboola.com/extend/component/deployment/) 

@@ -118,7 +118,7 @@ class Component(KBCEnvHandler):
             results.extend(self.download_products(fetch_parameter, start_date, end_date, last_state))
 
         if endpoints.get(KEY_PAYMENTS_TRANSACTIONS):
-            logging.info(f'Getting payments transactions')
+            logging.info('Getting payments transactions')
             results.extend(self.download_payments_transactions())
 
         if endpoints.get(KEY_CUSTOMERS):
@@ -187,7 +187,8 @@ class Component(KBCEnvHandler):
                           KBCTableDef(name='payments_transactions', pk=['id'],
                                       columns=[],
                                       destination=''),
-                          fix_headers=True, flatten_objects=False, child_separator='__') as writer_payments_transactions:
+                          fix_headers=True, flatten_objects=False,
+                          child_separator='__') as writer_payments_transactions:
             for o in self.client.get_payments_transactions():
                 writer_payments_transactions.write(o)
 

@@ -13,14 +13,8 @@ import pyactiveresource
 import pyactiveresource.formats
 import shopify
 from pyactiveresource.connection import ResourceNotFound, UnauthorizedAccess, ClientError
-# ##################  Taken from Sopify Singer-Tap
+# ##################  Taken from Shopify Singer-Tap
 from shopify import PaginatedIterator
-
-import ssl
-import urllib.request
-
-# Add this at the top of your script
-ssl._create_default_https_context = ssl._create_unverified_context
 
 RESULTS_PER_PAGE = 250
 
