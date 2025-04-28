@@ -79,8 +79,12 @@ class Component(KBCEnvHandler):
 
         self.validate_api_token(self.cfg_params[KEY_API_TOKEN])
 
-        self.client = ShopifyClient(self.cfg_params[KEY_SHOP], self.cfg_params[KEY_API_TOKEN],
-                                    self.cfg_params.get('api_version', '2022-10'))
+        try:
+            self.client = ShopifyClient(self.cfg_params[KEY_SHOP], self.cfg_params[KEY_API_TOKEN],
+                                        self.cfg_params.get('api_version', '2022-10'))
+        except Exception as e:
+            raise UserException(f"Error while creating Shopify client: {e}") from e
+
         self.extraction_time = datetime.datetime.now().isoformat()
 
         # shared customers writer
