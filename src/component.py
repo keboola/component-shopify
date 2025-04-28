@@ -193,8 +193,14 @@ class Component(KBCEnvHandler):
                                       destination=''),
                           fix_headers=True, flatten_objects=False,
                           child_separator='__') as writer_payments_transactions:
+            payment_transactions_processed = 0
             for o in self.client.get_payments_transactions():
                 writer_payments_transactions.write(o)
+                payment_transactions_processed += 1
+
+                if payment_transactions_processed % 1000 == 0:
+                    logging.info(f"Downloading records: {payment_transactions_processed} "
+                                 f"- {payment_transactions_processed + 1000}")
 
         return writer_payments_transactions.collect_results()
 
