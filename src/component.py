@@ -26,6 +26,7 @@ KEY_LOADING_OPTIONS = 'loading_options'
 
 KEY_ENDPOINTS = 'endpoints'
 KEY_ORDERS = 'orders'
+KEY_PAYMENTS_TRANSACTIONS = 'payments_transactions'
 KEY_PRODUCTS = 'products'
 KEY_PRODUCTS_ARCHIVED = 'products_archived'
 KEY_PRODUCTS_DRAFTS = 'products_drafts'
@@ -78,12 +79,18 @@ class Component(KBCEnvHandler):
 
         self.validate_api_token(self.cfg_params[KEY_API_TOKEN])
 
-        self.client = ShopifyClient(self.cfg_params[KEY_SHOP], self.cfg_params[KEY_API_TOKEN],
-                                    self.cfg_params.get('api_version', '2022-10'))
+        try:
+            self.client = ShopifyClient(self.cfg_params[KEY_SHOP], self.cfg_params[KEY_API_TOKEN],
+                                        self.cfg_params.get('api_version', '2022-10'))
+        except Exception as e:
+            raise UserException(f"Error while creating Shopify client: {e}") from e
+
         self.extraction_time = datetime.datetime.now().isoformat()
 
         # shared customers writer
-        self._customer_writer = CustomersWriter(self.tables_out_path, 'customer', extraction_time=self.extraction_time,
+        self._customer_writer = CustomersWriter(self.tables_out_path,
+                                                'customer',
+                                                extraction_time=self.extraction_time,
                                                 file_headers=self.get_state_file())
         self._metafields_writer = ResultWriter(self.tables_out_path,
                                                KBCTableDef(name='metafields',
@@ -115,6 +122,10 @@ class Component(KBCEnvHandler):
         if endpoints.get(KEY_PRODUCTS):
             logging.info(f'Getting products since {start_date} to {end_date}')
             results.extend(self.download_products(fetch_parameter, start_date, end_date, last_state))
+
+        if endpoints.get(KEY_PAYMENTS_TRANSACTIONS):
+            logging.info('Getting payments transactions')
+            results.extend(self.download_payments_transactions())
 
         if endpoints.get(KEY_CUSTOMERS):
             # special case, results collected at the end
@@ -160,22 +171,42 @@ class Component(KBCEnvHandler):
                                          pk=['order_id', 'id'],
                                          columns=file_headers.get('transactions.csv', []),
                                          destination=''), fix_headers=True,
-                             flatten_objects=False, child_separator='__') as writer_transactions:
+                             flatten_objects=False, child_separator='__') as writer_order_transactions:
             orders_processed = 0
             for o in self.client.get_orders(fetch_field, start_date, end_date):
                 writer_orders.write(o)
                 orders_processed += 1
 
                 if self.cfg_params[KEY_ENDPOINTS].get('transactions'):
-                    self.download_transactions(writer_transactions, o['id'])
+                    self.download_order_transactions(writer_order_transactions, o['id'])
 
                 if orders_processed % 1000 == 0:
                     logging.info(f"Downloading records: {orders_processed} - {orders_processed + 1000}")
 
         results = writer_orders.collect_results()
-        results.extend(writer_transactions.collect_results())
+        results.extend(writer_order_transactions.collect_results())
 
         return results
+
+    def download_payments_transactions(self):
+        with ResultWriter(self.tables_out_path,
+                          KBCTableDef(name='payments_transactions',
+                                      pk=['id'],
+                                      columns=[],
+                                      destination=''),
+                          fix_headers=True,
+                          flatten_objects=False,
+                          child_separator='__') as writer_payments_transactions:
+            payment_transactions_processed = 0
+            for o in self.client.get_payments_transactions():
+                writer_payments_transactions.write(o)
+                payment_transactions_processed += 1
+
+                if payment_transactions_processed % 1000 == 0:
+                    logging.info(f"Downloading records: {payment_transactions_processed} "
+                                 f"- {payment_transactions_processed + 1000}")
+
+        return writer_payments_transactions.collect_results()
 
     def download_products(self, fetch_field, start_date, end_date, file_headers):
         inventory_writer = ResultWriter(self.tables_out_path,
@@ -250,8 +281,8 @@ class Component(KBCEnvHandler):
         for o in self.client.get_customers(fetch_field, start_date, end_date):
             self._customer_writer.write(o)
 
-    def download_transactions(self, writer, order_id):
-        for transaction in self.client.get_transactions(order_id):
+    def download_order_transactions(self, writer, order_id):
+        for transaction in self.client.get_order_transactions(order_id):
             writer.write(transaction)
 
     def download_events(self, param, fetch_field, start_date, end_date):

@@ -35,6 +35,7 @@ custom [application](https://help.shopify.com/en/manual/apps/custom-apps) :
     - `Customers` : "read_customers"
     - `Events` : "read_marketing_events"
     - `Locations` : "read_locations"
+    - `Payments` : "read_shopify_payments_payouts"
 
 - Save the scopes
 - Click "Install app"
@@ -75,7 +76,7 @@ Following endpoints are supported
 
 ### Products
 
-### Inventory
+#### Inventory
 
 This allows to
 retrieve [inventory items](https://shopify.dev/api/admin-rest/2021-10/resources/inventoryitem#resource_object),
@@ -91,12 +92,19 @@ their primary foreign/primary keys:
 ![model](https://shopify.dev/assets/api/reference/inventory-4b12bfe5466efda91c64da3c488e58b9b52cce2feae2ad7119115e377b226103.png)
 
 ### Orders
+Download orders, order is a customer's request to purchase one or more products from a shop
 
-### Transactions
+####  Orders - transactions
 
 Download transactions related to Orders.
 
 ### Customers
+
+The Customer endpoint download information about a shop's customer
+
+### Payments Transactions
+
+Balance Transactions make up the canonical "statement of account", or ledger for a Shopify Payments account
 
 ### Events
 
@@ -138,6 +146,14 @@ docker-compose run --rm test
 ```
 
 # Integration
+
+# SSL verifying turnoff for development
+in shopify_cli.py add following lines to the top of the script
+```
+import ssl
+# Add this at the top of your script
+ssl._create_default_https_context = ssl._create_unverified_context
+```
 
 For information about deployment and integration with KBC, please refer to
 the [deployment section of developers documentation](https://developers.keboola.com/extend/component/deployment/) 
