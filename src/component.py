@@ -88,7 +88,9 @@ class Component(KBCEnvHandler):
         self.extraction_time = datetime.datetime.now().isoformat()
 
         # shared customers writer
-        self._customer_writer = CustomersWriter(self.tables_out_path, 'customer', extraction_time=self.extraction_time,
+        self._customer_writer = CustomersWriter(self.tables_out_path,
+                                                'customer',
+                                                extraction_time=self.extraction_time,
                                                 file_headers=self.get_state_file())
         self._metafields_writer = ResultWriter(self.tables_out_path,
                                                KBCTableDef(name='metafields',
@@ -188,10 +190,12 @@ class Component(KBCEnvHandler):
 
     def download_payments_transactions(self):
         with ResultWriter(self.tables_out_path,
-                          KBCTableDef(name='payments_transactions', pk=['id'],
+                          KBCTableDef(name='payments_transactions',
+                                      pk=['id'],
                                       columns=[],
                                       destination=''),
-                          fix_headers=True, flatten_objects=False,
+                          fix_headers=True,
+                          flatten_objects=False,
                           child_separator='__') as writer_payments_transactions:
             payment_transactions_processed = 0
             for o in self.client.get_payments_transactions():
