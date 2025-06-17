@@ -55,7 +55,7 @@ class Component(KBCEnvHandler):
         # for easier local project setup
         default_data_dir = Path(__file__).resolve().parent.parent.joinpath('data').as_posix() \
             if not os.environ.get('KBC_DATADIR') else None
-        
+
         self.short_headers = self.cfg_params.get(KEY_SHORT_HEADERS, False)
 
         KBCEnvHandler.__init__(self, MANDATORY_PARS, log_level=logging.DEBUG if debug else logging.INFO,
@@ -96,18 +96,24 @@ class Component(KBCEnvHandler):
                                                 extraction_time=self.extraction_time,
                                                 file_headers=self.get_state_file(),
                                                 short_headers=self.short_headers)
-        self._metafields_writer = ResultWriter(self.tables_out_path,
-                                               KBCTableDef(name='metafields',
-                                                           pk=['id'],
-                                                           columns=(
-                                                               shorten_headers(self.get_state_file().get(
-                                                                   'metafields.csv', [])) 
-                                                                if self.short_headers 
-                                                                else self.get_state_file().get(
-                                                                    'metafields.csv', [])
-                                                            ),
-                                                           destination=''),
-                                               flatten_objects=True, child_separator='__', fix_headers=True)
+        self._metafields_writer = ResultWriter(
+            self.tables_out_path,
+            KBCTableDef(
+                name='metafields',
+                pk=['id'],
+                columns=(
+                    shorten_headers(self.get_state_file().get(
+                        'metafields.csv', []))
+                    if self.short_headers
+                    else self.get_state_file().get(
+                        'metafields.csv', [])
+                ),
+                destination=''
+            ),
+            flatten_objects=True,
+            child_separator='__',
+            fix_headers=True
+        )
 
     def run(self):
         '''
@@ -176,17 +182,23 @@ class Component(KBCEnvHandler):
                          customers_writer=self._customer_writer,
                          file_headers=file_headers,
                          short_headers=self.short_headers) as writer_orders, \
-                ResultWriter(self.tables_out_path,
-                             KBCTableDef(name='transactions',
-                                         pk=['order_id', 'id'],
-                                         columns=(
-                                             shorten_headers(self.get_state_file().get(
-                                                 'transactions.csv', [])) 
-                                              if self.short_headers 
-                                              else self.get_state_file().get('transactions.csv', [])
-                                          ),
-                                         destination=''), fix_headers=True,
-                             flatten_objects=False, child_separator='__') as writer_order_transactions:
+                ResultWriter(
+                    self.tables_out_path,
+                    KBCTableDef(
+                        name='transactions',
+                        pk=['order_id', 'id'],
+                        columns=(
+                            shorten_headers(self.get_state_file().get(
+                                'transactions.csv', []))
+                            if self.short_headers
+                            else self.get_state_file().get('transactions.csv', [])
+                        ),
+                        destination=''
+                    ),
+                    fix_headers=True,
+                    flatten_objects=False,
+                    child_separator='__'
+                ) as writer_order_transactions:
             orders_processed = 0
             for o in self.client.get_orders(fetch_field, start_date, end_date):
                 writer_orders.write(o)
@@ -204,19 +216,22 @@ class Component(KBCEnvHandler):
         return results
 
     def download_payments_transactions(self):
-        with ResultWriter(self.tables_out_path,
-                          KBCTableDef(name='payments_transactions',
-                                      pk=['id'],
-                                      columns=(
-                                          shorten_headers(self.get_state_file().get(
-                                              'payments_transactions.csv', [])) 
-                                            if self.short_headers 
-                                            else self.get_state_file().get('payments_transactions.csv', [])
-                                        ),
-                                      destination=''),
-                          fix_headers=True,
-                          flatten_objects=False,
-                          child_separator='__') as writer_payments_transactions:
+        with ResultWriter(
+            self.tables_out_path,
+            KBCTableDef(
+                name='payments_transactions',
+                pk=['id'],
+                columns=(
+                    shorten_headers(self.get_state_file().get('payments_transactions.csv', []))
+                    if self.short_headers
+                    else self.get_state_file().get('payments_transactions.csv', [])
+                ),
+                destination=''
+            ),
+            fix_headers=True,
+            flatten_objects=False,
+            child_separator='__'
+        ) as writer_payments_transactions:
             payment_transactions_processed = 0
             for o in self.client.get_payments_transactions():
                 writer_payments_transactions.write(o)
