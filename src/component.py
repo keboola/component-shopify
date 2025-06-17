@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import List
 
 from kbc.env_handler import KBCEnvHandler
-from kbc.result import ResultWriter, KBCTableDef
+from kbc.result import ResultWriter, KBCTableDef, KBCResult
 
 from result import OrderWriter, ProductsWriter, CustomersWriter
 from shopify_cli import ShopifyClient
@@ -45,7 +45,7 @@ MANDATORY_PARS = [KEY_API_TOKEN, KEY_SHOP, KEY_LOADING_OPTIONS, KEY_ENDPOINTS]
 MANDATORY_IMAGE_PARS = []
 
 
-def shorten_results(results, should_shorten: bool = False):
+def shorten_results(results: list[KBCResult], should_shorten: bool):
     if not should_shorten or not results:
         return results
 
@@ -131,7 +131,7 @@ class Component(KBCEnvHandler):
         fetch_parameter = params[KEY_LOADING_OPTIONS].get(KEY_FETCH_PARAMETER) or 'updated_at'
         since = params[KEY_LOADING_OPTIONS].get(KEY_SINCE_DATE) or '2005-01-01'
         until = params[KEY_LOADING_OPTIONS].get(KEY_TO_DATE) or 'now'
-        should_shorten = params[KEY_LOADING_OPTIONS].get(KEY_SHORT_HEADERS, False)
+        should_shorten = params[KEY_LOADING_OPTIONS].get(KEY_SHORT_HEADERS) or False
 
         start_date, end_date = self.get_date_period_converted(since, until)
         results = []
