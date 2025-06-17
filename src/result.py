@@ -5,30 +5,11 @@ EXTRACTION_TIME = 'extraction_time'
 KEY_ROW_NR = 'row_nr'
 
 
-def shorten_headers(headers: list[str]) -> list[str]:
-    def shorten_header(header: str) -> str:
-        vowels = 'aeiouyAEIOUY'
-        return ''.join(c for c in header if c not in vowels)
-    return [shorten_header(header) for header in headers if len(header) > 64]
-
-
 class LineItemWriter(ResultWriter):
-    def __init__(
-            self,
-            result_dir_path,
-            extraction_time,
-            additional_pk: list = None,
-            prefix='',
-            file_headers=None,
-            short_headers=False
-    ):
+    def __init__(self, result_dir_path, extraction_time, additional_pk: list = None, prefix='', file_headers=None):
         pk = ['id']
         if additional_pk:
             pk.extend(additional_pk)
-
-        if short_headers and file_headers:
-            file_headers = {k: shorten_headers(v) for k, v in file_headers.items()}
-
         file_name = f'{prefix}line_item'
         ResultWriter.__init__(self, result_dir_path,
                               KBCTableDef(name=file_name, pk=pk, columns=file_headers.get(f'{file_name}.csv', []),
@@ -91,21 +72,10 @@ class LineItemWriter(ResultWriter):
 
 
 class FulfillmentsWriter(ResultWriter):
-    def __init__(
-            self,
-            result_dir_path,
-            extraction_time,
-            additional_pk: list = None,
-            prefix='',
-            file_headers=None,
-            short_headers=False
-    ):
+    def __init__(self, result_dir_path, extraction_time, additional_pk: list = None, prefix='', file_headers=None):
         pk = ['id', 'order_id']
         if not additional_pk:
             pk.extend(additional_pk)
-
-        if short_headers and file_headers:
-            file_headers = {k: shorten_headers(v) for k, v in file_headers.items()}
 
         ResultWriter.__init__(self, result_dir_path,
                               KBCTableDef(name=f'{prefix}fulfillments', pk=pk,
@@ -176,17 +146,7 @@ class FulfillmentsWriter(ResultWriter):
 
 class OrderWriter(ResultWriter):
 
-    def __init__(
-            self,
-            result_dir_path,
-            result_name,
-            extraction_time,
-            customers_writer,
-            file_headers=None,
-            short_headers=False
-    ):
-        if short_headers and file_headers:
-            file_headers = {k: shorten_headers(v) for k, v in file_headers.items()}
+    def __init__(self, result_dir_path, result_name, extraction_time, customers_writer, file_headers=None):
 
         ResultWriter.__init__(self, result_dir_path,
                               KBCTableDef(name=result_name, pk=['id'],
@@ -301,13 +261,10 @@ class OrderWriter(ResultWriter):
 # ###################### PRODUCTS
 
 class ProductVariantWriter(ResultWriter):
-    def __init__(self, result_dir_path, extraction_time, file_headers, additional_pk: list = None, short_headers=False):
+    def __init__(self, result_dir_path, extraction_time, file_headers, additional_pk: list = None):
         pk = ['id', 'product_id']
         if additional_pk:
             pk.extend(additional_pk)
-
-        if short_headers and file_headers:
-            file_headers = {k: shorten_headers(v) for k, v in file_headers.items()}
 
         ResultWriter.__init__(self, result_dir_path,
                               KBCTableDef(name='product_variant', pk=pk,
@@ -351,10 +308,7 @@ class ProductVariantWriter(ResultWriter):
 
 class ProductsWriter(ResultWriter):
 
-    def __init__(self, result_dir_path, result_name, extraction_time, file_headers, short_headers=False):
-        if short_headers and file_headers:
-            file_headers = {k: shorten_headers(v) for k, v in file_headers.items()}
-
+    def __init__(self, result_dir_path, result_name, extraction_time, file_headers):
         ResultWriter.__init__(self, result_dir_path,
                               KBCTableDef(name=result_name, pk=['id'],
                                           columns=file_headers.get(
@@ -421,10 +375,7 @@ class CustomersWriter(ResultWriter):
     Sliced
     """
 
-    def __init__(self, result_dir_path, result_name, extraction_time, file_headers, short_headers=False):
-        if short_headers and file_headers:
-            file_headers = {k: shorten_headers(v) for k, v in file_headers.items()}
-
+    def __init__(self, result_dir_path, result_name, extraction_time, file_headers):
         ResultWriter.__init__(self, result_dir_path,
                               KBCTableDef(name=result_name, pk=['id'],
                                           columns=file_headers.get(

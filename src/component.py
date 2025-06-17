@@ -12,7 +12,7 @@ from typing import List
 from kbc.env_handler import KBCEnvHandler
 from kbc.result import ResultWriter, KBCTableDef
 
-from result import OrderWriter, ProductsWriter, CustomersWriter, shorten_headers
+from result import OrderWriter, ProductsWriter, CustomersWriter
 from shopify_cli import ShopifyClient
 
 # configuration variables
@@ -45,6 +45,27 @@ MANDATORY_PARS = [KEY_API_TOKEN, KEY_SHOP, KEY_LOADING_OPTIONS, KEY_ENDPOINTS]
 MANDATORY_IMAGE_PARS = []
 
 
+def shorten_results(results, should_shorten: bool = False):
+    if not should_shorten or not results:
+        return results
+        
+    def shorten_header(header: str) -> str:
+        vowels = 'aeiouyAEIOUY'
+        return ''.join(c for c in header if c not in vowels)
+    
+    for result in results:
+        new_dict = {}
+        for key, value in result.items():
+            if len(key) > 64:
+                new_dict[shorten_header(key)] = value
+            else:
+                new_dict[key] = value
+        result.clear()
+        result.update(new_dict)
+            
+    return results
+
+
 class UserException(Exception):
     pass
 
@@ -59,8 +80,6 @@ class Component(KBCEnvHandler):
         KBCEnvHandler.__init__(self, MANDATORY_PARS, log_level=logging.DEBUG if debug else logging.INFO,
                                data_path=default_data_dir)
         # override debug from config
-        self.short_headers = self.cfg_params.get(KEY_SHORT_HEADERS, False)
-
         if self.cfg_params.get(KEY_DEBUG):
             debug = True
         if debug:
@@ -94,26 +113,14 @@ class Component(KBCEnvHandler):
         self._customer_writer = CustomersWriter(self.tables_out_path,
                                                 'customer',
                                                 extraction_time=self.extraction_time,
-                                                file_headers=self.get_state_file(),
-                                                short_headers=self.short_headers)
-        self._metafields_writer = ResultWriter(
-            self.tables_out_path,
-            KBCTableDef(
-                name='metafields',
-                pk=['id'],
-                columns=(
-                    shorten_headers(self.get_state_file().get(
-                        'metafields.csv', []))
-                    if self.short_headers
-                    else self.get_state_file().get(
-                        'metafields.csv', [])
-                ),
-                destination=''
-            ),
-            flatten_objects=True,
-            child_separator='__',
-            fix_headers=True
-        )
+                                                file_headers=self.get_state_file())
+        self._metafields_writer = ResultWriter(self.tables_out_path,
+                                               KBCTableDef(name='metafields',
+                                                           pk=['id'],
+                                                           columns=self.get_state_file().get(
+                                                               'metafields.csv', []),
+                                                           destination=''),
+                                               flatten_objects=True, child_separator='__', fix_headers=True)
 
     def run(self):
         '''
@@ -125,6 +132,7 @@ class Component(KBCEnvHandler):
         fetch_parameter = params[KEY_LOADING_OPTIONS].get(KEY_FETCH_PARAMETER) or 'updated_at'
         since = params[KEY_LOADING_OPTIONS].get(KEY_SINCE_DATE) or '2005-01-01'
         until = params[KEY_LOADING_OPTIONS].get(KEY_TO_DATE) or 'now'
+        should_shorten = params[KEY_LOADING_OPTIONS].get(KEY_SHORT_HEADERS, False)
 
         start_date, end_date = self.get_date_period_converted(since, until)
         results = []
@@ -159,6 +167,8 @@ class Component(KBCEnvHandler):
         self._metafields_writer.close()
         results.extend(self._metafields_writer.collect_results())
 
+        results = shorten_results(results, should_shorten)
+
         # update column names in statefile
         for r in results:
             file_name = os.path.basename(r.full_path)
@@ -180,25 +190,13 @@ class Component(KBCEnvHandler):
     def download_orders(self, fetch_field, start_date, end_date, file_headers):
         with OrderWriter(self.tables_out_path, 'order', extraction_time=self.extraction_time,
                          customers_writer=self._customer_writer,
-                         file_headers=file_headers,
-                         short_headers=self.short_headers) as writer_orders, \
-                ResultWriter(
-                    self.tables_out_path,
-                    KBCTableDef(
-                        name='transactions',
-                        pk=['order_id', 'id'],
-                        columns=(
-                            shorten_headers(self.get_state_file().get(
-                                'transactions.csv', []))
-                            if self.short_headers
-                            else self.get_state_file().get('transactions.csv', [])
-                        ),
-                        destination=''
-                    ),
-                    fix_headers=True,
-                    flatten_objects=False,
-                    child_separator='__'
-                ) as writer_order_transactions:
+                         file_headers=file_headers) as writer_orders, \
+                ResultWriter(self.tables_out_path,
+                             KBCTableDef(name='transactions',
+                                         pk=['order_id', 'id'],
+                                         columns=file_headers.get('transactions.csv', []),
+                                         destination=''), fix_headers=True,
+                             flatten_objects=False, child_separator='__') as writer_order_transactions:
             orders_processed = 0
             for o in self.client.get_orders(fetch_field, start_date, end_date):
                 writer_orders.write(o)
@@ -216,22 +214,14 @@ class Component(KBCEnvHandler):
         return results
 
     def download_payments_transactions(self):
-        with ResultWriter(
-            self.tables_out_path,
-            KBCTableDef(
-                name='payments_transactions',
-                pk=['id'],
-                columns=(
-                    shorten_headers(self.get_state_file().get('payments_transactions.csv', []))
-                    if self.short_headers
-                    else self.get_state_file().get('payments_transactions.csv', [])
-                ),
-                destination=''
-            ),
-            fix_headers=True,
-            flatten_objects=False,
-            child_separator='__'
-        ) as writer_payments_transactions:
+        with ResultWriter(self.tables_out_path,
+                          KBCTableDef(name='payments_transactions',
+                                      pk=['id'],
+                                      columns=[],
+                                      destination=''),
+                          fix_headers=True,
+                          flatten_objects=False,
+                          child_separator='__') as writer_payments_transactions:
             payment_transactions_processed = 0
             for o in self.client.get_payments_transactions():
                 writer_payments_transactions.write(o)
@@ -261,8 +251,7 @@ class Component(KBCEnvHandler):
 
         with ProductsWriter(self.tables_out_path, 'product',
                             extraction_time=self.extraction_time,
-                            file_headers=file_headers,
-                            short_headers=self.short_headers) as writer:
+                            file_headers=file_headers) as writer:
             for o in self.client.get_products(fetch_field, start_date, end_date, self.get_product_status()):
                 variants = [p['variants'] for p in o]
                 inventory_ids = [str(v['inventory_item_id']) for sublist in variants for v in sublist]
