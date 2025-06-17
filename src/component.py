@@ -48,11 +48,11 @@ MANDATORY_IMAGE_PARS = []
 def shorten_results(results, should_shorten: bool = False):
     if not should_shorten or not results:
         return results
-        
+
     def shorten_header(header: str) -> str:
         vowels = 'aeiouyAEIOUY'
         return ''.join(c for c in header if c not in vowels)
-    
+
     for result in results:
         new_dict = {}
         for key, value in result.items():
@@ -62,7 +62,7 @@ def shorten_results(results, should_shorten: bool = False):
                 new_dict[key] = value
         result.clear()
         result.update(new_dict)
-            
+
     return results
 
 
