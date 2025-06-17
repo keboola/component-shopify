@@ -54,14 +54,13 @@ def shorten_results(results, should_shorten: bool = False):
         return ''.join(c for c in header if c not in vowels)
 
     for result in results:
-        new_dict = {}
-        for key, value in result.items():
-            if len(key) > 64:
-                new_dict[shorten_header(key)] = value
+        new_columns = []
+        for column in result.table_def.columns:
+            if len(column) > 64:
+                new_columns.append(shorten_header(column))
             else:
-                new_dict[key] = value
-        result.clear()
-        result.update(new_dict)
+                new_columns.append(column)
+        result.table_def.columns = new_columns
 
     return results
 
