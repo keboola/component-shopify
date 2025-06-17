@@ -13,7 +13,15 @@ def shorten_headers(headers: list[str]) -> list[str]:
 
 
 class LineItemWriter(ResultWriter):
-    def __init__(self, result_dir_path, extraction_time, additional_pk: list = None, prefix='', file_headers=None, short_headers=False):
+    def __init__(
+            self,
+            result_dir_path,
+            extraction_time,
+            additional_pk: list = None,
+            prefix='',
+            file_headers=None,
+            short_headers=False
+    ):
         pk = ['id']
         if additional_pk:
             pk.extend(additional_pk)
@@ -83,7 +91,15 @@ class LineItemWriter(ResultWriter):
 
 
 class FulfillmentsWriter(ResultWriter):
-    def __init__(self, result_dir_path, extraction_time, additional_pk: list = None, prefix='', file_headers=None, short_headers=False):
+    def __init__(
+            self,
+            result_dir_path,
+            extraction_time,
+            additional_pk: list = None,
+            prefix='',
+            file_headers=None,
+            short_headers=False
+    ):
         pk = ['id', 'order_id']
         if not additional_pk:
             pk.extend(additional_pk)
@@ -160,7 +176,15 @@ class FulfillmentsWriter(ResultWriter):
 
 class OrderWriter(ResultWriter):
 
-    def __init__(self, result_dir_path, result_name, extraction_time, customers_writer, file_headers=None, short_headers=False):
+    def __init__(
+            self,
+            result_dir_path,
+            result_name,
+            extraction_time,
+            customers_writer,
+            file_headers=None,
+            short_headers=False
+    ):
         if short_headers and file_headers:
             file_headers = {k: shorten_headers(v) for k, v in file_headers.items()}
 
