@@ -56,11 +56,11 @@ class Component(KBCEnvHandler):
         default_data_dir = Path(__file__).resolve().parent.parent.joinpath('data').as_posix() \
             if not os.environ.get('KBC_DATADIR') else None
 
-        self.short_headers = self.cfg_params.get(KEY_SHORT_HEADERS, False)
-
         KBCEnvHandler.__init__(self, MANDATORY_PARS, log_level=logging.DEBUG if debug else logging.INFO,
                                data_path=default_data_dir)
         # override debug from config
+        self.short_headers = self.cfg_params.get(KEY_SHORT_HEADERS, False)
+
         if self.cfg_params.get(KEY_DEBUG):
             debug = True
         if debug:
