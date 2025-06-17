@@ -231,6 +231,13 @@
                     "description": "Field/parameter to be used for filtering data from API.",
                     "propertyOrder": 300
                 },
+                "short_headers": {
+                    "type": "boolean",
+                    "title": "Short headers",
+                    "default": false,
+                    "description": "Shorting column names that are longer than 64 characters.",
+                    "propertyOrder": 350
+                },
                 "incremental_output": {
                     "enum": [
                         0,
