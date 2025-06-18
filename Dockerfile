@@ -5,7 +5,7 @@ ENV PYTHONIOENCODING=utf-8
 RUN apt-get update && apt-get install -y git
 
 COPY requirements.txt /code/requirements.txt
-RUN pip install -r /code/requirements.txt
+RUN pip install --no-cache-dir -r /code/requirements.txt
 
 COPY flake8.cfg /code/flake8.cfg
 RUN pip install flake8
