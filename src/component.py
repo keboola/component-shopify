@@ -23,7 +23,6 @@ KEY_TO_DATE = 'date_to'
 KEY_INCREMENTAL_OUTPUT = 'incremental_output'
 KEY_FETCH_PARAMETER = 'fetch_parameter'
 KEY_LOADING_OPTIONS = 'loading_options'
-KEY_SHORT_HEADERS = 'short_headers'
 
 KEY_ENDPOINTS = 'endpoints'
 KEY_ORDERS = 'orders'
@@ -58,8 +57,6 @@ class Component(KBCEnvHandler):
 
         KBCEnvHandler.__init__(self, MANDATORY_PARS, log_level=logging.DEBUG if debug else logging.INFO,
                                data_path=default_data_dir)
-
-        self.should_shorten = self.cfg_params.get(KEY_LOADING_OPTIONS, {}).get(KEY_SHORT_HEADERS) or False
 
         self.last_state = self.get_state_file() or {}
 
@@ -97,15 +94,14 @@ class Component(KBCEnvHandler):
         self._customer_writer = CustomersWriter(self.tables_out_path,
                                                 'customer',
                                                 extraction_time=self.extraction_time,
-                                                file_headers=self.last_state, short_columns=self.should_shorten)
+                                                file_headers=self.last_state)
         self._metafields_writer = ResultWriter(self.tables_out_path,
                                                KBCTableDef(name='metafields',
                                                            pk=['id'],
                                                            columns=self.last_state.get(
                                                                'metafields.csv', []),
                                                            destination=''),
-                                               flatten_objects=True, child_separator='__', fix_headers=True,
-                                               short_column_names=self.should_shorten)
+                                               flatten_objects=True, child_separator='__', fix_headers=True)
 
     def run(self):
         '''
@@ -113,7 +109,6 @@ class Component(KBCEnvHandler):
         '''
         params = self.cfg_params  # noqa
 
-        
         fetch_parameter = params[KEY_LOADING_OPTIONS].get(KEY_FETCH_PARAMETER) or 'updated_at'
         since = params[KEY_LOADING_OPTIONS].get(KEY_SINCE_DATE) or '2005-01-01'
         until = params[KEY_LOADING_OPTIONS].get(KEY_TO_DATE) or 'now'
@@ -172,14 +167,13 @@ class Component(KBCEnvHandler):
     def download_orders(self, fetch_field, start_date, end_date, file_headers):
         with OrderWriter(self.tables_out_path, 'order', extraction_time=self.extraction_time,
                          customers_writer=self._customer_writer,
-                         file_headers=file_headers, short_columns=self.should_shorten) as writer_orders, \
+                         file_headers=file_headers) as writer_orders, \
                 ResultWriter(self.tables_out_path,
                              KBCTableDef(name='transactions',
                                          pk=['order_id', 'id'],
                                          columns=file_headers.get('transactions.csv', []),
                                          destination=''), fix_headers=True,
-                             flatten_objects=False, child_separator='__',
-                             short_column_names=self.should_shorten) as writer_order_transactions:
+                             flatten_objects=False, child_separator='__') as writer_order_transactions:
             orders_processed = 0
             for o in self.client.get_orders(fetch_field, start_date, end_date):
                 writer_orders.write(o)
@@ -204,7 +198,7 @@ class Component(KBCEnvHandler):
                                       destination=''),
                           fix_headers=True,
                           flatten_objects=False,
-                          child_separator='__', short_column_names=self.should_shorten) as writer_payments_transactions:
+                          child_separator='__') as writer_payments_transactions:
             payment_transactions_processed = 0
             for o in self.client.get_payments_transactions():
                 writer_payments_transactions.write(o)
@@ -221,22 +215,20 @@ class Component(KBCEnvHandler):
                                         KBCTableDef(name='inventory_items', pk=['id'],
                                                     columns=[],
                                                     destination=''),
-                                        flatten_objects=True, child_separator='__',
-                                        short_column_names=self.should_shorten)
+                                        flatten_objects=True, child_separator='__')
         inventory_level_writer = ResultWriter(self.tables_out_path,
                                               KBCTableDef(name='inventory_levels',
                                                           pk=['inventory_item_id', 'location_id'],
                                                           columns=[],
                                                           destination=''),
                                               fix_headers=True,
-                                              flatten_objects=True, child_separator='__',
-                                              short_column_names=self.should_shorten)
+                                              flatten_objects=True, child_separator='__')
         if self.cfg_params[KEY_ENDPOINTS].get(KEY_INVENTORY):
             logging.info('Getting inventory levels and locations for products')
 
         with ProductsWriter(self.tables_out_path, 'product',
                             extraction_time=self.extraction_time,
-                            file_headers=file_headers, short_columns=self.should_shorten) as writer:
+                            file_headers=file_headers) as writer:
             for o in self.client.get_products(fetch_field, start_date, end_date, self.get_product_status()):
                 variants = [p['variants'] for p in o]
                 inventory_ids = [str(v['inventory_item_id']) for sublist in variants for v in sublist]
@@ -266,7 +258,7 @@ class Component(KBCEnvHandler):
                           KBCTableDef(name='locations', pk=['id'],
                                       columns=[],
                                       destination=''),
-                          flatten_objects=True, child_separator='__', short_column_names=self.should_shorten) as writer:
+                          flatten_objects=True, child_separator='__') as writer:
             for item in self.client.get_locations():
                 writer.write(item)
 
@@ -313,8 +305,7 @@ class Component(KBCEnvHandler):
                           KBCTableDef(name='events', pk=['id'],
                                       columns=headers,
                                       destination=''),
-                          fix_headers=True, flatten_objects=True, child_separator='__',
-                          short_column_names=self.should_shorten) as writer:
+                          fix_headers=True, flatten_objects=True, child_separator='__') as writer:
 
             # iterate over types
 

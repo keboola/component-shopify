@@ -12,8 +12,7 @@ class LineItemWriter(ResultWriter):
             extraction_time,
             additional_pk: list = None,
             prefix='',
-            file_headers=None,
-            short_columns=False
+            file_headers=None
     ):
         pk = ['id']
         if additional_pk:
@@ -30,8 +29,7 @@ class LineItemWriter(ResultWriter):
             ),
             fix_headers=True,
             flatten_objects=True,
-            child_separator='__',
-            short_column_names=short_columns
+            child_separator='__'
         )
         self.extraction_time = extraction_time
 
@@ -48,8 +46,7 @@ class LineItemWriter(ResultWriter):
             ),
             flatten_objects=True,
             fix_headers=True,
-            child_separator='__',
-            short_column_names=short_columns
+            child_separator='__'
         )
         # tax_lines writer
         self.tax_lines_writer = ResultWriter(
@@ -62,8 +59,7 @@ class LineItemWriter(ResultWriter):
             ),
             flatten_objects=True,
             fix_headers=True,
-            child_separator='__',
-            short_column_names=short_columns
+            child_separator='__'
         )
 
     def write(self, data, file_name=None, user_values=None, object_from_arrays=False, write_header=True):
@@ -102,8 +98,7 @@ class FulfillmentsWriter(ResultWriter):
             extraction_time,
             additional_pk: list = None,
             prefix='',
-            file_headers=None,
-            short_columns=False
+            file_headers=None
     ):
         pk = ['id', 'order_id']
         if not additional_pk:
@@ -120,8 +115,7 @@ class FulfillmentsWriter(ResultWriter):
             ),
             fix_headers=True,
             flatten_objects=True,
-            child_separator='__',
-            short_column_names=short_columns
+            child_separator='__'
         )
         self.extraction_time = extraction_time
 
@@ -132,8 +126,7 @@ class FulfillmentsWriter(ResultWriter):
             extraction_time,
             additional_pk=['fulfillment_id'],
             prefix='fulfillment_',
-            file_headers=file_headers,
-            short_columns=short_columns
+            file_headers=file_headers
         )
 
         # discount_allocations writer
@@ -147,8 +140,7 @@ class FulfillmentsWriter(ResultWriter):
             ),
             flatten_objects=True,
             fix_headers=True,
-            child_separator='__',
-            short_column_names=short_columns
+            child_separator='__'
         )
         # tax_lines writer
         self.tax_lines_writer = ResultWriter(
@@ -161,8 +153,7 @@ class FulfillmentsWriter(ResultWriter):
             ),
             flatten_objects=True,
             fix_headers=True,
-            child_separator='__',
-            short_column_names=short_columns
+            child_separator='__'
         )
 
     def write(self, data, file_name=None, user_values=None, object_from_arrays=False, write_header=True):
@@ -206,8 +197,7 @@ class OrderWriter(ResultWriter):
             result_name,
             extraction_time,
             customers_writer,
-            file_headers=None,
-            short_columns=False
+            file_headers=None
     ):
 
         ResultWriter.__init__(self, result_dir_path,
@@ -222,12 +212,12 @@ class OrderWriter(ResultWriter):
 
         # lineitems writer
         self.line_item_writer = LineItemWriter(result_dir_path, extraction_time, additional_pk=['order_id'],
-                                               file_headers=file_headers, short_columns=short_columns)
+                                               file_headers=file_headers)
 
         # fulfillments writer
         self.fulfillments_writer = FulfillmentsWriter(result_dir_path, extraction_time, additional_pk=['order_id'],
                                                       prefix='order_',
-                                                      file_headers=file_headers, short_columns=short_columns)
+                                                      file_headers=file_headers)
 
         # discount_applications writer
         self.discount_applications_writer = ResultWriter(result_dir_path,
@@ -238,8 +228,7 @@ class OrderWriter(ResultWriter):
                                                                      destination=''),
                                                          fix_headers=True,
                                                          flatten_objects=True,
-                                                         child_separator='__',
-                                                         short_column_names=short_columns)
+                                                         child_separator='__')
 
         # discount_codes writer
         self.discount_codes_writer = ResultWriter(result_dir_path,
@@ -250,8 +239,7 @@ class OrderWriter(ResultWriter):
                                                               destination=''),
                                                   fix_headers=True,
                                                   flatten_objects=True,
-                                                  child_separator='__',
-                                                  short_column_names=short_columns)
+                                                  child_separator='__')
 
         # tax_lines writer
         self.tax_lines_writer = ResultWriter(result_dir_path,
@@ -262,8 +250,7 @@ class OrderWriter(ResultWriter):
                                                          destination=''),
                                              fix_headers=True,
                                              flatten_objects=True,
-                                             child_separator='__',
-                                             short_column_names=short_columns)
+                                             child_separator='__')
 
         # customer writer
         self.customer_writer = customers_writer
@@ -326,7 +313,7 @@ class OrderWriter(ResultWriter):
 # ###################### PRODUCTS
 
 class ProductVariantWriter(ResultWriter):
-    def __init__(self, result_dir_path, extraction_time, file_headers, additional_pk: list = None, short_columns=False):
+    def __init__(self, result_dir_path, extraction_time, file_headers, additional_pk: list = None):
         pk = ['id', 'product_id']
         if additional_pk:
             pk.extend(additional_pk)
@@ -335,8 +322,7 @@ class ProductVariantWriter(ResultWriter):
                               KBCTableDef(name='product_variant', pk=pk,
                                           columns=file_headers.get('product_variant.csv', []),
                                           destination=''),
-                              fix_headers=True, flatten_objects=True, child_separator='__',
-                              short_column_names=short_columns)
+                              fix_headers=True, flatten_objects=True, child_separator='__')
         self.extraction_time = extraction_time
 
         self.result_dir_path = result_dir_path
@@ -348,8 +334,7 @@ class ProductVariantWriter(ResultWriter):
                                                                   columns=file_headers.get(
                                                                       'product_variant_presentment_prices.csv', []),
                                                                   destination=''),
-                                                      fix_headers=True, flatten_objects=True, child_separator='__',
-                                                      short_column_names=short_columns)
+                                                      fix_headers=True, flatten_objects=True, child_separator='__')
 
     def write(self, data, file_name=None, user_values=None, object_from_arrays=False, write_header=True):
         # flatten obj
@@ -375,22 +360,20 @@ class ProductVariantWriter(ResultWriter):
 
 class ProductsWriter(ResultWriter):
 
-    def __init__(self, result_dir_path, result_name, extraction_time, file_headers, short_columns=False):
+    def __init__(self, result_dir_path, result_name, extraction_time, file_headers):
         ResultWriter.__init__(self, result_dir_path,
                               KBCTableDef(name=result_name, pk=['id'],
                                           columns=file_headers.get(
                                               f'{result_name}.csv', []),
                                           destination=''),
-                              fix_headers=True, flatten_objects=True, child_separator='__',
-                              short_column_names=short_columns)
+                              fix_headers=True, flatten_objects=True, child_separator='__')
         self.extraction_time = extraction_time
         # custom user added col
         self.user_value_cols = ['extraction_time']
         self.result_dir_path = result_dir_path
 
         # variants writer
-        self.variants_writer = ProductVariantWriter(result_dir_path, extraction_time, file_headers,
-                                                    short_columns=short_columns)
+        self.variants_writer = ProductVariantWriter(result_dir_path, extraction_time, file_headers)
 
         # options writer
         self.product_options_writer = ResultWriter(result_dir_path, KBCTableDef(name='product_options',
@@ -398,16 +381,14 @@ class ProductsWriter(ResultWriter):
                                                                                 columns=file_headers.get(
                                                                                     'product_options.csv', []),
                                                                                 destination=''),
-                                                   fix_headers=True, flatten_objects=True, child_separator='__',
-                                                   short_column_names=short_columns)
+                                                   fix_headers=True, flatten_objects=True, child_separator='__')
         # images writer
         self.product_images_writer = ResultWriter(result_dir_path, KBCTableDef(name='product_images',
                                                                                pk=['id', 'product_id'],
                                                                                columns=file_headers.get(
                                                                                    'product_images.csv', []),
                                                                                destination=''),
-                                                  fix_headers=True, flatten_objects=True, child_separator='__',
-                                                  short_column_names=short_columns)
+                                                  fix_headers=True, flatten_objects=True, child_separator='__')
 
     def write(self, data, file_name=None, user_values=None, object_from_arrays=False, write_header=True):
         product_id = data['id']
@@ -446,14 +427,13 @@ class CustomersWriter(ResultWriter):
     Sliced
     """
 
-    def __init__(self, result_dir_path, result_name, extraction_time, file_headers, short_columns=False):
+    def __init__(self, result_dir_path, result_name, extraction_time, file_headers):
         ResultWriter.__init__(self, result_dir_path,
                               KBCTableDef(name=result_name, pk=['id'],
                                           columns=file_headers.get(
                                               'customer.csv', []),
                                           destination=''),
-                              fix_headers=True, flatten_objects=True, child_separator='__',
-                              short_column_names=short_columns)
+                              fix_headers=True, flatten_objects=True, child_separator='__')
         self.extraction_time = extraction_time
         # custom user added col
         self.user_value_cols = ['extraction_time']
@@ -464,8 +444,7 @@ class CustomersWriter(ResultWriter):
                                                                         columns=file_headers.get(
                                                                             'customer_addresses.csv', []),
                                                                         destination=''),
-                                           fix_headers=True, flatten_objects=True, child_separator='__',
-                                           short_column_names=short_columns)
+                                           fix_headers=True, flatten_objects=True, child_separator='__')
 
     def write(self, data, file_name=None, user_values=None, object_from_arrays=False, write_header=True):
         self.address_writer.write_all(data.pop('addresses', []), user_values={
