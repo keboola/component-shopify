@@ -249,7 +249,7 @@
                     "propertyOrder": 450
                 }
             },
-            "description": "Data is fetched incrementally based on the last updated datetime",
+            "description": "Data is fetched incrementally based on the last updated datetime. NOTE: Column names longer than 64 characters will be automatically shortened, more in <a href=\"https://github.com/keboola/component-shopify/blob/main/README.md\">documenation.</a>",
             "propertyOrder": 400
         }
     }

@@ -119,6 +119,14 @@ Note that different resources generate different types of event.
 See the [docs](https://shopify.dev/docs/admin-api/rest/reference/events/event#resources-that-can-create-events) for a
 list of possible verbs.
 
+## NOTE: Short headers
+
+The extractor will automatically shorten column names that are longer than 64 characters. The shortening process works as follows:
+1. First, all vowels (a, e, i, o, u, y) are removed from the column name
+2. If the column name is still longer than 64 characters after removing vowels, it will be truncated to exactly 64 characters
+
+This feature helps prevent issues with storage limitations.
+
 ## Development
 
 If required, change local data folder (the `CUSTOM_FOLDER` placeholder) path to your custom path in the docker-compose
@@ -156,4 +164,4 @@ ssl._create_default_https_context = ssl._create_unverified_context
 ```
 
 For information about deployment and integration with KBC, please refer to
-the [deployment section of developers documentation](https://developers.keboola.com/extend/component/deployment/) 
+the [deployment section of developers documentation](https://developers.keboola.com/extend/component/deployment/)

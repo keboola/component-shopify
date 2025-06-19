@@ -15,6 +15,10 @@ To enable this application you need to:
     - `Inventory`
     - `Customers`
     
-    
+The extractor will automatically shorten column names that are longer than 64 characters. The shortening process works as follows:
+1. First, all vowels (a, e, i, o, u, y) are removed from the column name
+2. If the column name is still longer than 64 characters after removing vowels, it will be truncated to exactly 64 characters
 
-Additional documentation is available [here](https://bitbucket.org/kds_consulting_team/kds-team.ex-shopify/src/master/README.md)
+This feature helps prevent issues with storage limitations.
+
+Additional documentation is available [here](https://github.com/keboola/component-shopify/blob/main/README.md)
