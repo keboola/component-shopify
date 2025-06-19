@@ -70,6 +70,14 @@ Accepts date in `YYYY-MM-DD` format or dateparser string i.e. `5 days ago`, `1 m
 The result tables will be updated based on the primary key if set to Incremental update.
 Full load overwrites the destination table each time.
 
+### Short headers
+
+The extractor will automatically shorten column names that are longer than 64 characters. The shortening process works as follows:
+1. First, all vowels (a, e, i, o, u, y) are removed from the column name
+2. If the column name is still longer than 64 characters after removing vowels, it will be truncated to exactly 64 characters
+
+This feature helps prevent issues with storage limitations.
+
 ## Endpoints
 
 Following endpoints are supported
@@ -156,4 +164,4 @@ ssl._create_default_https_context = ssl._create_unverified_context
 ```
 
 For information about deployment and integration with KBC, please refer to
-the [deployment section of developers documentation](https://developers.keboola.com/extend/component/deployment/) 
+the [deployment section of developers documentation](https://developers.keboola.com/extend/component/deployment/)
