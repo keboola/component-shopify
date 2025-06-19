@@ -70,14 +70,6 @@ Accepts date in `YYYY-MM-DD` format or dateparser string i.e. `5 days ago`, `1 m
 The result tables will be updated based on the primary key if set to Incremental update.
 Full load overwrites the destination table each time.
 
-### Short headers
-
-The extractor will automatically shorten column names that are longer than 64 characters. The shortening process works as follows:
-1. First, all vowels (a, e, i, o, u, y) are removed from the column name
-2. If the column name is still longer than 64 characters after removing vowels, it will be truncated to exactly 64 characters
-
-This feature helps prevent issues with storage limitations.
-
 ## Endpoints
 
 Following endpoints are supported
@@ -126,6 +118,14 @@ e.g. `confirmed, create, destroy`. If omitted all possible types are downloaded
 Note that different resources generate different types of event.
 See the [docs](https://shopify.dev/docs/admin-api/rest/reference/events/event#resources-that-can-create-events) for a
 list of possible verbs.
+
+## NOTE: Short headers
+
+The extractor will automatically shorten column names that are longer than 64 characters. The shortening process works as follows:
+1. First, all vowels (a, e, i, o, u, y) are removed from the column name
+2. If the column name is still longer than 64 characters after removing vowels, it will be truncated to exactly 64 characters
+
+This feature helps prevent issues with storage limitations.
 
 ## Development
 
