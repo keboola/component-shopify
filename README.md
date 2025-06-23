@@ -119,13 +119,25 @@ Note that different resources generate different types of event.
 See the [docs](https://shopify.dev/docs/admin-api/rest/reference/events/event#resources-that-can-create-events) for a
 list of possible verbs.
 
-## NOTE: Short headers
+## Column Name Shortening
 
-The extractor will automatically shorten column names that are longer than 64 characters. The shortening process works as follows:
-1. First, all vowels (a, e, i, o, u, y) are removed from the column name
-2. If the column name is still longer than 64 characters after removing vowels, it will be truncated to exactly 64 characters
+The extractor automatically shortens column names that are longer than 64 characters to prevent storage limitations. The shortening process uses a sophisticated two-step approach:
 
-This feature helps prevent issues with storage limitations.
+### Step 1: Vowel Removal
+First, all vowels (a, e, i, o, u, y) are removed from the column name while preserving readability. For example:
+- `customer_email_address` → `cstmr_ml_ddrss`
+- `product_variant_inventory_quantity` → `prdct_vrnt_nvntry_qntty`
+
+### Step 2: Hash-based Truncation
+If the column name is still longer than 64 characters after removing vowels, it preserves the first 10 and last 10 characters, replacing the middle with a unique hash. For example:
+- `very_long_column_name_that_exceeds_sixty_four_characters_limit` → `very_long_XXXXX_characters_limit`
+
+This ensures unique, readable column names while staying within storage constraints. If some column names would be shortened by Hash-based truncation, the component automatically generates a `shortened_columns_mapping` table that contains the mapping between original and shortened column names for all tables. This table includes:
+- `table_name`: The name of the table
+- `original_column_name`: The original column name
+- `shortened_column_name`: The shortened version used in the output table
+
+This mapping helps you understand which columns were shortened and how to interpret the data in your destination storage.
 
 ## Development
 
@@ -150,18 +162,3 @@ docker-compose run --rm dev
 Run the test suite and lint check using this command:
 
 ```
-docker-compose run --rm test
-```
-
-# Integration
-
-# SSL verifying turnoff for development
-in shopify_cli.py add following lines to the top of the script
-```
-import ssl
-# Add this at the top of your script
-ssl._create_default_https_context = ssl._create_unverified_context
-```
-
-For information about deployment and integration with KBC, please refer to
-the [deployment section of developers documentation](https://developers.keboola.com/extend/component/deployment/)

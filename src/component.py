@@ -59,6 +59,7 @@ class Component(KBCEnvHandler):
                                data_path=default_data_dir)
 
         self.last_state = self.get_state_file() or {}
+        self.shortened_columns = {}
 
         # override debug from config
         if self.cfg_params.get(KEY_DEBUG):
@@ -146,6 +147,12 @@ class Component(KBCEnvHandler):
         self._metafields_writer.close()
         results.extend(self._metafields_writer.collect_results())
 
+        # Collect shortened columns from all writers
+        self.collect_shortened_columns(self._customer_writer, self._metafields_writer)
+
+        # Write shortened columns to CSV file
+        self.write_shortened_columns_to_csv()
+
         # update column names in statefile
         for r in results:
             file_name = os.path.basename(r.full_path)
@@ -153,6 +160,64 @@ class Component(KBCEnvHandler):
         self.write_state_file(self.last_state)
         incremental = params[KEY_LOADING_OPTIONS].get(KEY_INCREMENTAL_OUTPUT, False)
         self.create_manifests(results, incremental=incremental)
+
+    def collect_shortened_columns(self, *writers):
+        """
+        Collect shortened column names from ResultWriter instances (including custom writers)
+
+        Args:
+            *writers: Variable number of ResultWriter instances to collect from
+        """
+        for writer in writers:
+            if hasattr(writer, 'get_shortened_column_names'):
+                shortened = writer.get_shortened_column_names()
+                if shortened:
+                    # Use table name as key
+                    table_name = writer.table_def.name
+                    self.shortened_columns[table_name] = shortened
+
+        logging.info(f"Collected shortened columns for {len(self.shortened_columns)} tables")
+
+    def write_shortened_columns_to_csv(self):
+        """
+        Write shortened columns data to CSV file using ResultWriter
+        """
+        if not self.shortened_columns:
+            logging.info("No shortened columns to write")
+            return
+
+        # Prepare data for CSV
+        csv_data = []
+        for table_name, column_mapping in self.shortened_columns.items():
+            for original_name, shortened_name in column_mapping.items():
+                csv_data.append({
+                    'table_name': table_name,
+                    'original_column_name': original_name,
+                    'shortened_column_name': shortened_name
+                })
+
+        # Create ResultWriter for shortened columns
+        with ResultWriter(
+            self.tables_out_path,
+            KBCTableDef(
+                name='shortened_columns_mapping',
+                pk=['table_name', 'original_column_name'],
+                columns=['table_name', 'original_column_name', 'shortened_column_name'],
+                destination=''
+            ),
+            fix_headers=True,
+            flatten_objects=True,
+            child_separator='__'
+        ) as writer:
+            for row in csv_data:
+                writer.write(row)
+
+        # Collect results and create manifest
+        results = writer.collect_results()
+        if results:
+            self.create_manifests(results, incremental=False)
+
+        logging.info(f"Written {len(csv_data)} shortened column mappings to CSV with manifest")
 
     def get_product_status(self):
         status = ['active']
@@ -185,6 +250,9 @@ class Component(KBCEnvHandler):
                 if orders_processed % 1000 == 0:
                     logging.info(f"Downloading records: {orders_processed} - {orders_processed + 1000}")
 
+        # Collect shortened columns from order writers
+        self.collect_shortened_columns(writer_orders, writer_order_transactions)
+
         results = writer_orders.collect_results()
         results.extend(writer_order_transactions.collect_results())
 
@@ -207,6 +275,9 @@ class Component(KBCEnvHandler):
                 if payment_transactions_processed % 1000 == 0:
                     logging.info(f"Downloading records: {payment_transactions_processed} "
                                  f"- {payment_transactions_processed + 1000}")
+
+        # Collect shortened columns from payments writer
+        self.collect_shortened_columns(writer_payments_transactions)
 
         return writer_payments_transactions.collect_results()
 
@@ -245,6 +316,9 @@ class Component(KBCEnvHandler):
 
         inventory_writer.close()
         inventory_level_writer.close()
+
+        # Collect shortened columns from product writers
+        self.collect_shortened_columns(writer, inventory_writer, inventory_level_writer)
 
         results = writer.collect_results()
         results.extend(inventory_level_writer.collect_results())
@@ -308,7 +382,6 @@ class Component(KBCEnvHandler):
                           fix_headers=True, flatten_objects=True, child_separator='__') as writer:
 
             # iterate over types
-
             types = self.parse_comma_separated_values(param['types'])
             filters = param['filters']
             if not types:
@@ -317,6 +390,9 @@ class Component(KBCEnvHandler):
                 for o in self.client.get_events(fetch_field, start_date, end_date, filter_resource=filters,
                                                 event_type=t):
                     writer.write(o)
+
+        # Collect shortened columns from events writer
+        self.collect_shortened_columns(writer)
 
         results = writer.collect_results()
         return results
