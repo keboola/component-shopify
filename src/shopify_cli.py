@@ -5,6 +5,9 @@ import logging
 import math
 import sys
 import time
+import socket
+import http.client
+import urllib.error
 from enum import Enum
 from typing import Type, List, Union
 
@@ -53,6 +56,11 @@ def retry_handler(details):
                  details['tries'], MAX_RETRIES)
 
 
+def network_error_handler(details):
+    logging.info("Connection error occurred -- Retry %s/%s",
+                 details['tries'], MAX_RETRIES)
+
+
 # ################  Taken from Sopify Singer-Tap
 # pylint: disable=unused-argument
 def retry_after_wait_gen(**kwargs):
@@ -81,6 +89,14 @@ def error_handling(fnc):
                            ),
                           giveup=is_not_status_code_fn(range(500, 599)),
                           on_backoff=retry_handler,
+                          max_tries=MAX_RETRIES)
+    @backoff.on_exception(backoff.expo,
+                          (http.client.RemoteDisconnected,
+                           socket.error,
+                           urllib.error.URLError,
+                           ConnectionError,
+                           OSError),
+                          on_backoff=network_error_handler,
                           max_tries=MAX_RETRIES)
     @backoff.on_exception(retry_after_wait_gen,
                           pyactiveresource.connection.ClientError,
