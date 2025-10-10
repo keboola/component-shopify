@@ -184,6 +184,11 @@ class ShopifyClient:
         self.session = shopify.Session(shop_url, api_version, access_token)
         self.wait_time_seconds = BASE_SLEEP_TIME
         shopify.ShopifyResource.activate_session(self.session)
+        self.metrics_callback = None
+
+    def set_metrics_callback(self, callback):
+        """Set a callback function to track API metrics: callback(duration, rate_limited)"""
+        self.metrics_callback = callback
 
     def get_orders(self, fetch_parameter: str, datetime_min: datetime.datetime = None,
                    datetime_max: datetime.datetime = datetime.datetime.now().replace(microsecond=0),
@@ -373,7 +378,12 @@ class ShopifyClient:
     def call_api_all_pages(self, shopify_object: Type[shopify.ShopifyResource], query_params):
         # this makes the PaginatedCollection iterator actually fetch all pages automatically
         query_params['no_iter_next'] = False
-        return PaginatedIterator(shopify_object.find(**query_params))
+        start_time = time.time()
+        result = PaginatedIterator(shopify_object.find(**query_params))
+        duration = time.time() - start_time
+        if self.metrics_callback:
+            self.metrics_callback(duration, False)
+        return result
 
     def get_objects_paginated_simple(self, shopify_object: Type[shopify.ShopifyResource],
                                      results_per_page=RESULTS_PER_PAGE,
@@ -453,7 +463,10 @@ class ShopifyClient:
 
     def check_api_limit_use(self):
         used_credits, max_credits = self._try_get_credits()
-        if int(used_credits) >= int(max_credits) - 1:
+        rate_limited = int(used_credits) >= int(max_credits) - 1
+        if rate_limited:
+            if self.metrics_callback:
+                self.metrics_callback(0, True)
             time.sleep(self.wait_time_seconds)
 
     def _try_get_credits(self):

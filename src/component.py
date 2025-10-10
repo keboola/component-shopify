@@ -61,6 +61,14 @@ class Component(KBCEnvHandler):
         self.last_state = self.get_state_file() or {}
         self.shortened_columns = {}
 
+        # API metrics tracking
+        self.api_metrics = {
+            "total_requests": 0,
+            "total_time": 0.0,
+            "rate_limit_hits": 0,
+            "last_log_time": datetime.datetime.now(),
+        }
+
         # override debug from config
         if self.cfg_params.get(KEY_DEBUG):
             debug = True
@@ -76,7 +84,8 @@ class Component(KBCEnvHandler):
         try:
             # validation of mandatory parameters. Produces ValueError
             self.validate_config(MANDATORY_PARS)
-            self.validate_image_parameters(MANDATORY_IMAGE_PARS)
+            if MANDATORY_IMAGE_PARS:
+                self.validate_image_parameters(MANDATORY_IMAGE_PARS)
         except ValueError as e:
             logging.exception(e)
             exit(1)
@@ -86,6 +95,7 @@ class Component(KBCEnvHandler):
         try:
             self.client = ShopifyClient(self.cfg_params[KEY_SHOP], self.cfg_params[KEY_API_TOKEN],
                                         self.cfg_params.get('api_version', '2022-10'))
+            self.client.set_metrics_callback(self._track_api_call)
         except Exception as e:
             raise UserException(f"Error while creating Shopify client: {e}") from e
 
@@ -103,6 +113,25 @@ class Component(KBCEnvHandler):
                                                                'metafields.csv', []),
                                                            destination=''),
                                                flatten_objects=True, child_separator='__', fix_headers=True)
+
+    def _track_api_call(self, duration, rate_limited):
+        """Callback to track API metrics"""
+        self.api_metrics["total_requests"] += 1
+        self.api_metrics["total_time"] += duration
+        if rate_limited:
+            self.api_metrics["rate_limit_hits"] += 1
+        self._log_metrics()
+
+    def _log_metrics(self):
+        """Log metrics every 30 seconds"""
+        now = datetime.datetime.now()
+        if (now - self.api_metrics["last_log_time"]).seconds >= 30:
+            avg_time = self.api_metrics["total_time"] / max(1, self.api_metrics["total_requests"])
+            logging.info(
+                f"Shopify API stats: {self.api_metrics['total_requests']} requests, "
+                f"avg {avg_time:.2f}s, {self.api_metrics['rate_limit_hits']} rate limits"
+            )
+            self.api_metrics["last_log_time"] = now
 
     def run(self):
         '''
@@ -160,6 +189,14 @@ class Component(KBCEnvHandler):
         self.write_state_file(self.last_state)
         incremental = params[KEY_LOADING_OPTIONS].get(KEY_INCREMENTAL_OUTPUT, False)
         self.create_manifests(results, incremental=incremental)
+
+        # Log final API metrics
+        avg_time = self.api_metrics["total_time"] / max(1, self.api_metrics["total_requests"])
+        logging.info(
+            f"Final Shopify API stats: {self.api_metrics['total_requests']} requests, "
+            f"total {self.api_metrics['total_time']:.2f}s, avg {avg_time:.2f}s, "
+            f"{self.api_metrics['rate_limit_hits']} rate limit hits"
+        )
 
     def collect_shortened_columns(self, *writers):
         """
