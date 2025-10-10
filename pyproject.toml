@@ -1,0 +1,17 @@
+[project]
+name = "component-shopify"
+dynamic = ["version"]
+requires-python = "~=3.13.0"
+dependencies = [
+    "backoff>=2.2.1",
+    "freezegun>=1.5.5",
+    "mock>=5.2.0",
+    "pyactiveresource>=2.2.2",
+    "shopifyapi>=12.7.0",
+]
+
+[dependency-groups]
+dev = [
+    "flake8>=7.3.0",
+    "ruff>=0.14.0",
+]

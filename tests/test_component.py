@@ -1,8 +1,4 @@
-'''
-Created on 12. 11. 2018
 
-@author: esner
-'''
 import mock
 import os
 import unittest

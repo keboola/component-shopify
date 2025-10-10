@@ -1,6 +1,0 @@
-git+https://bitbucket.org/kds_consulting_team/keboola-python-util-lib.git@feature/short_column_names#egg=kbc
-mock
-freezegun
-ShopifyAPI==12.7.0
-pyactiveresource==2.2.2
-backoff==2.1.2
